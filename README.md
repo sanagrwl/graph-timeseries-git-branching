@@ -1,4 +1,4 @@
-Git like branching. Time series graph example.
+
 
 categories.csv: contains 4 columns (supplied id, category name, branch, time of creation). This just specifies what categories were created at what branch at what time.
 category-relations.csv: contains 4 columns (from category id, to category id, branch, time of creation) 
