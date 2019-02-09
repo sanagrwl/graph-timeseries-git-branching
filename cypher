@@ -64,3 +64,19 @@ return a,as,b,bs,bc
 match (a:category)-[r:has_state {branch: 'master', to: 1000}]->(as:state) where r.to = 1000 return a,r,as
 
 
+**** user deletes category 4 (door hardware) in master at time t10 ******
+match (n:category {id: '4'})-[r:contains* {branch: 'master', to: 1000}]->(:category)-[rsc:has_state {branch: 'master', to: 1000}]->(:state),
+(n)-[rs:has_state {branch: 'master', to: 1000}]->(:state),
+(n)<-[incr:contains {branch: 'master', to: 1000}]-(:category)
+unwind r as rentry
+with  rsc, rs, incr, rentry
+set rsc.to = 10, rs.to = 10, incr.to = 10, rentry.to = 10
+
+//// branch view
+match (a:category)-[ar:has_state {branch: 'master'}]->(as:state) where ar.from <=6 and ar.to > 6
+Optional match (b:category)-[br:has_state {branch: 'branch'}]->(bs:state) where br.from > 6 and br.to = 1000
+Optional match (a)-[rb:contains {branch: 'branch'}]->(bc:category)
+return a,as,b,bs,bc
+
+//// master view
+match (a:category)-[r:has_state {branch: 'master', to: 1000}]->(as:state) where r.to = 1000 return a,r,as
