@@ -13,31 +13,22 @@ def create_relationships(parent_id, sub_cat_count, offset, file)
     end
 end
 
-def create_parent_tree(parent_id, sub_cat_count, file)
-    level_2_cat_ids = create_relationships(parent_id, sub_cat_count, 0, file)
-    
-    offset = level_2_cat_ids.length - 1
-    level_3_cat_ids = level_2_cat_ids.map do |level_2_cat_id|
-        r = create_relationships(level_2_cat_id, sub_cat_count, offset, file)
+def create_sub_relationships(parent_ids, sub_cat_count, file)
+    offset = parent_ids.length - 1
+    parent_ids.map do |sub_cat_id|
+        r = create_relationships(sub_cat_id, sub_cat_count, offset, file)
         offset =  offset - 1 + r.length
-        r
-    end.flatten
-
-    offset = level_3_cat_ids.length - 1
-    level_4_cat_ids = level_3_cat_ids.map do |level_3_cat_id|
-        r = create_relationships(level_3_cat_id, sub_cat_count, offset, file)
-        offset =  offset - 1 + r.length
-        r
-    end.flatten
-
-    offset = level_4_cat_ids.length - 1
-    level_4_cat_ids.map do |level_4_cat_id|
-        r = create_relationships(level_4_cat_id, sub_cat_count, offset, file)
-        offset = offset -  1 + r.length
         r
     end.flatten
 end
 
+def create_parent_tree(parent_id, sub_cat_count, file)
+    level_2_cat_ids = create_sub_relationships([parent_id], sub_cat_count, file)
+    level_3_cat_ids = create_sub_relationships(level_2_cat_ids, sub_cat_count, file)
+    level_4_cat_ids = create_sub_relationships(level_3_cat_ids, sub_cat_count, file)
+    level_5_cat_ids = create_sub_relationships(level_4_cat_ids, sub_cat_count, file)
+    level_5_cat_ids
+end
 
 # create relationships
 File.open("toomanycategoryrelationships.csv", 'w') do |file|
