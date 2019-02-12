@@ -11,6 +11,16 @@ const generateUUID = require('../util');
 const events = [];
 
 class UiUpdater {
+    static updateBranchesList(branches) {
+        const options = $("#branchList");
+        
+        options.empty();
+        options.append($('<option value="master">Default</option>'))
+        branches.forEach(br => {
+            options.append($(`<option value="${br.name}">${br.name}</option>`))
+        });
+    }
+
     static  updateCategoryTable(categories) {
         const tbody = $("#tbody-categories");
 
@@ -169,7 +179,7 @@ class UiUpdater {
         });
     }
 
-    static getCategories() {
+    static getCategories(branchName) {
         CategoryAPI.getCategories().then((categories) => {
             UiUpdater.updateCategoryTable(categories);
         });
@@ -191,8 +201,16 @@ class UiUpdater {
 
     static createBranch(name) {
         BranchAPI.createBranch(name).then((data) => {
+            UiUpdater.getBranches();
+        });
+    }
 
-        })
+    static getBranches() {
+        BranchAPI.getBranches().then(branches => {
+            if (!!branches && branches.length > 0) {
+                UiUpdater.updateBranchesList(branches);
+            }
+        });
     }
 
 

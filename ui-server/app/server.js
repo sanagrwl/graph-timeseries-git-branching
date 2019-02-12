@@ -8,6 +8,10 @@ var express = require('express')
     , bodyParser = require('body-parser');
 var cors = require('cors');
 
+function branchName(request) {
+    return request.headers["x-branch"] || "master"
+}
+
 var app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -54,13 +58,13 @@ app.post('/events/:id/merge/:from', function(request, response){
 });
 
 app.get('/categories', function(request, response){
-    Controller.getCategories("master", (categories) => {
+    Controller.getCategories(branchName(request), (categories) => {
         response.send(categories);    // echo the result back
     })
 });
 
 app.get('/categories/:id', function(request, response){
-    Controller.getSubCategories("master", request.params.id, (categories) => {
+    Controller.getSubCategories(branchName(request), request.params.id, (categories) => {
         response.send(categories);    // echo the result back
     })
 });
@@ -68,7 +72,7 @@ app.get('/categories/:id', function(request, response){
 app.post('/categories', function(request, response){
     const id = request.body.id
     const name = request.body.name
-    Controller.createCategory("master", id, name, (payload) => {
+    Controller.createCategory(branchName(request), id, name, (payload) => {
         response.send(payload);  
     })
 });

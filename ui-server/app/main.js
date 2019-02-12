@@ -8,12 +8,9 @@ const AddProductEvent = require('./js/events/AddProductEvent');
 const SetProductAttributeEvent = require('./js/events/SetProductAttributeEvent');
 
 $(function() {
-    UiUpdater.getCategories();    
+    UiUpdater.getCategories();   
+    UiUpdater.getBranches(); 
 });
-
-
-
-
 
 function addProduct(name, price, visible, color, category) {
     const event = new AddProductEvent(catalog,
@@ -64,7 +61,7 @@ $('#btnSubmitProduct').click(() => {
 
 $('#btnAddCategory').click(() => {
     const name = $('#categoryName').val();
-    
+
     UiUpdater.createCategory(name);
 
     $('#categoryFormModal').modal('hide');
@@ -88,5 +85,10 @@ $('#btnAddBranch').click(() => {
     $('#branchFormModal').modal('hide');
     UiUpdater.resetUpdateForms();
 });
+
+$('select#branchList').on('change', function() {
+    UiUpdater.getCategories();
+});
+  
 
 
