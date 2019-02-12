@@ -15,7 +15,6 @@ class UiUpdater {
         const options = $("#branchList");
         
         options.empty();
-        options.append($('<option value="master">Default</option>'))
         branches.forEach(br => {
             options.append($(`<option value="${br.name}">${br.name}</option>`))
         });
@@ -179,7 +178,7 @@ class UiUpdater {
         });
     }
 
-    static getCategories(branchName) {
+    static getCategories() {
         CategoryAPI.getCategories().then((categories) => {
             UiUpdater.updateCategoryTable(categories);
         });
@@ -195,7 +194,7 @@ class UiUpdater {
 
     static createCategory(name) {
         CategoryAPI.createCategory(generateUUID(), name).then((result) => {
-            
+            UiUpdater.getCategories();
         });
     }
 

@@ -58,6 +58,8 @@ app.post('/events/:id/merge/:from', function(request, response){
 
 });
 
+// new endpoints
+
 app.get('/categories', function(request, response){
     Controller.getCategories(branchName(request), (categories) => {
         response.send(categories);    // echo the result back

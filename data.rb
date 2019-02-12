@@ -5,10 +5,14 @@ File.open("toomanycategories.csv", 'w') do |file|
     end
 end
 
+def write_relationship(parent_id, sub_cat_id, file)
+    file.write("#{parent_id},#{sub_cat_id},master,#{sub_cat_id}\n")
+end
+
 def create_relationships(parent_id, sub_cat_count, offset, file)
     (1..sub_cat_count).to_a.map do |c|
         sub_cat_id = parent_id + c + offset
-        file.write("#{parent_id},#{sub_cat_id},master,#{sub_cat_id}\n")
+        write_relationship(parent_id, sub_cat_id, file)
         sub_cat_id
     end
 end
@@ -30,12 +34,36 @@ def create_parent_tree(parent_id, sub_cat_count, file)
     level_5_cat_ids
 end
 
-# create relationships
-File.open("toomanycategoryrelationships.csv", 'w') do |file|
+def create_category_relationships 
     sub_cat_count = 3
     parent_cat_id = 1
-    (1..10).to_a.each do |counter|
-        last_cat_id = create_parent_tree(parent_cat_id, sub_cat_count, file).max
-        parent_cat_id = last_cat_id + 1
+    File.open("toomanycategoryrelationships.csv", 'w') do |file|
+        parent_ids = (1..10).to_a.map do |counter|
+            last_cat_id = create_parent_tree(parent_cat_id, sub_cat_count, file).max
+            parent_cat_id = last_cat_id + 1
+            parent_cat_id
+        end.concat([1])
+
+        parent_ids
+    end
+    
+end
+
+File.open("startCategoryRelationships.csv", 'w') do |file|
+    create_category_relationships().each do |top_level_cat_id|
+        file.write("#{top_level_cat_id},master,#{top_level_cat_id}\n")
     end
 end
+
+# create relationships
+# File.open("toomanycategoryrelationships.csv", 'w') do |file|
+#     sub_cat_count = 3
+#     parent_cat_id = 1
+#     (1..10).to_a.map do |counter|
+#         last_cat_id = create_parent_tree(parent_cat_id, sub_cat_count, file).max
+#         parent_cat_id = last_cat_id + 1
+#         parent_cat_id
+#     end.concat([1]).each do |top_level_cat_id|
+#         write_relationship("start", top_level_cat_id, file)
+#     end
+# end

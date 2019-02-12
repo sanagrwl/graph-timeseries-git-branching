@@ -6,6 +6,7 @@ const selectedBranchName = require('../selectedBranch');
 class CategoryAPI {
     static defaultHeaders() {
         const headers = new Headers();
+        headers.append("Content-Type", "application/json");
         const branchName = selectedBranchName();
         if (!!branchName) {
             headers.append("X-Branch", selectedBranchName());
@@ -38,13 +39,10 @@ class CategoryAPI {
     }
 
     static createCategory(categoryId, name) {
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-
         return new Promise((resolve, reject) => {
             const payload = {
                 method: 'post',
-                headers: myHeaders,
+                headers: CategoryAPI.defaultHeaders(),
                 body: JSON.stringify({id: categoryId, name: name})
             };
 

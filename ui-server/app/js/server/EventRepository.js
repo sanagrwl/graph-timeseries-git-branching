@@ -14,7 +14,7 @@ const uri = 'bolt://localhost';
 const driver = neo4j.driver(uri, neo4j.auth.basic('neo4j', '1234'));
 const session = driver.session();
 
-const maxTime = new Date(2037, 12, 31).getTime();
+const endOfTime = new Date(2037, 12, 31).getTime();
 
 class EventRepository {
     static serializeEvent(event) {
@@ -56,15 +56,29 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
         return session.run(command);
     }
 
+    static isMaster(branch) {
+        return branch === 'master';
+    }
+
     static getCategories(branch) {
-        const command = `match (a:category)-[:has_state {branch: '${branch}'}]->(s:state) 
-        where not (a)<-[:contains]-(:category) 
-        return a.id as category_id , s as state`;
+        console.log(`branch ${branch}`)
+        const command = `
+        match (branch:branch {name: '${branch}'})
+        with branch
+        match (:start)-[t:contains]->(c:category)-[:has_state]->(s:state) where t.branch in ["master", branch.name] 
+        with branch, s, c, t order by t.from desc 
+        with branch, s, c, head(collect(t)) as latest 
+        where (latest.from < branch.from and latest.to > branch.from and latest.branch = 'master') or 
+            (latest.branch = branch.name and latest.to = ${endOfTime})
+        return c, s
+        `;
+
+        console.log(command);
 
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
                 const categories = result.records.map((record) => {
-                    const category_id = record.get(0)
+                    const category_id = record.get(0).properties.id
                     const name = record.get(1).properties.name
                     return new Category(category_id, name)
                 });
@@ -93,11 +107,18 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
     }
 
     static createCategory(branch, categoryId, name) {
+        console.log(`createCategory: ${branch}`);
+
         const from = new Date().getTime();
         const command = `CREATE (c:category {id: '${categoryId}'}) with c 
         CREATE (s:state {name: '${name}'}) 
-        merge (c)-[r:has_state {branch: '${branch}', from: ${from}, to: ${maxTime}}]->(s) 
+        merge (c)-[r:has_state {branch: '${branch}', from: ${from}, to: ${endOfTime}}]->(s)
+        with c, s
+        match (start:start {id: 'start'})
+        merge (start)-[:contains {branch: '${branch}', from: ${from}, to: ${endOfTime}}]->(c)
         return c.id as category_id, s as state`;
+
+        console.log(command)
 
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
@@ -106,13 +127,13 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
         });
     }
 
-    static maxTime() {
+    static endOfTime() {
         return new Date(2037, 12, 31).getTime()
     }
 
     static createBranch(branchName) {
         const from = new Date().getTime();
-        const command = `CREATE (b:branch {name: '${branchName}', from: ${from}}) RETURN b`;
+        const command = `CREATE (b:branch {name: '${branchName}', from: ${from}, to: ${endOfTime}}) RETURN b`;
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
                 resolve(result)

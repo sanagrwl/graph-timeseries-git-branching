@@ -11,4 +11,8 @@ docker run --publish=7474:7474 --publish=7687:7687 --volume=$HOME/work/neo4j/dat
 Cypher commands for loading data and further scenarios are in cypher file
 ```
 
+```
+Frontend: npm run server
+server: node app/server.js
+```
 
