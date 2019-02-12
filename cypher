@@ -2,19 +2,17 @@
 
 MATCH (n) DETACH DELETE n;
 
-LOAD CSV FROM "file:///categories.csv" AS line
+LOAD CSV FROM "file:///toomanycategories.csv" AS line
 create (c:category {id: line[0]})
 create (s:state {name: line[1]})
-create (c)-[r:has_state {branch: line[2], from: toInt(line[3]), to: 1000}]->(s);
+create (c)-[r:has_state {branch: line[2], from: toInt(line[3]), to: 100000000}]->(s);
 
-LOAD CSV FROM "file:///category-relations.csv" AS line
+LOAD CSV FROM "file:///toomanycategoryrelationships.csv" AS line
 match (a:category), (b:category)
 where a.id = line[0] and b.id = line[1]
-create (a)-[r:contains {branch: line[2], from: toInt(line[3]), to: 1000}]->(b);
+create (a)-[r:contains {branch: line[2], from: toInt(line[3]), to: 100000000}]->(b);
 
-****** branch was created at T6 ******
-//// user added a leaf category at T7 on master
-//// user added a leaf category at T7 on branch
+***** user created a branch at time 
 
 //// whats in master
 match (a:category)-[r:has_state {branch: 'master', to: 1000}]->(as:state) return a,r,as

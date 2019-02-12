@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>var url = 'http://localhost';</script>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
+    <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"
+            crossorigin="anonymous"></script>
+
+    <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.min.js"
+            crossorigin="anonymous"></script>
+
+    <script
+            src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+            integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g="
+            crossorigin="anonymous"></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.css"
+          crossorigin="anonymous">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+
+    <style>
+        #graph {
+            height: 250px;
+            margin-bottom: 15px;
+            border: 3px solid #DDD;
+            border-radius: 3px;
+        }
+
+        .node {
+            font-size: 11px;
+            cursor: pointer;
+            padding-top: 4px;
+            padding-left: 2px;
+            padding-right: 2px;
+            min-width: 60px;
+            text-align: center;
+            height: 30px;
+            border: 2px solid #3C3C3A;
+            border-radius: 2px;
+            box-shadow: 1px 1px 1px rgba(0, 0, 0, .5);
+            background: #fff;
+            font-weight: bold;
+        }
+
+        .node.selected {
+            background: lightsalmon;
+        }
+        .node.selectedSecond {
+            background: lightblue;
+        }
+
+        .node.selectedParent {
+            background: lightgreen;
+        }
+
+        .node.branch {
+            background: hotpink;
+        }
+
+        .node.big-commpany .node-name {
+            line-height: 30px;
+            color: #000;
+        }
+
+        .node.big-commpany:hover .node-name {
+            color: #000;
+            text-shadow: 1px 1px rgba(0, 0, 0, .15);
+        }
+
+        button {
+            margin-left: 5px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-12" style="padding-top: 5px;">
+            <button type="button"  id="deleteEvent" class="btn btn-primary">Remove Event</button>
+            <button type="button"  id="mergeEvents" class="btn btn-primary" disabled="true">Merge Events</button>
+            <button type="button" data-toggle="modal" data-target="#branchFormModal" class="btn btn-primary">Add
+                Branch
+            </button>
+            <div id="graph">
+
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-4">
+            <button type="button" data-toggle="modal" data-target="#categoryFormModal" class="btn btn-primary">Add
+                Category
+            </button>
+
+            <div class="panel panel-default">
+                <!-- Default panel contents -->
+                <div class="panel-heading">Categories</div>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbody-categories">
+
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+        <div class="col-sm-8">
+            <button type="button" data-toggle="modal" data-target="#productFormModal" class="btn btn-primary">Add
+                Product
+            </button>
+            <div class="panel panel-default">
+                <!-- Default panel contents -->
+                <div class="panel-heading">Products</div>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Visible</th>
+                        <th>Color</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbody-products">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="productFormModal" role="dialog">
+    <input type="hidden" class="form-control" id="productId">
+
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title" id="productTitle"></h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="productName">Name</label>
+                    <input type="name" class="form-control" id="productName" placeholder="Enter name">
+                </div>
+                <div class="form-group">
+                    <label for="productCategory">Category</label>
+                    <select class="form-control" id="productCategory">
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="productPrice">Price</label>
+                    <input type="name" class="form-control" id="productPrice" placeholder="Enter price">
+                </div>
+                <div class="form-group">
+                    <label for="productVisible">Visible</label>
+                    <select class="form-control" id="productVisible">
+                        <option value="yes">yes</option>
+                        <option value="no">no</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="productColor">Color</label>
+                    <input type="name" class="form-control" id="productColor" placeholder="Enter color">
+                </div>
+                <button type="submit" class="btn btn-primary" id="btnSubmitProduct">Submit</button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="categoryFormModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Add Category</h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="categoryName">Name</label>
+                    <input type="name" class="form-control" id="categoryName" placeholder="Enter name">
+                </div>
+                <button type="submit" class="btn btn-primary" id="btnAddCategory">Submit</button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="branchFormModal" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Add Branch</h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="categoryName">Name</label>
+                    <input type="name" class="form-control" id="branchName" placeholder="Enter name">
+                </div>
+                <button type="submit" class="btn btn-primary" id="btnAddBranch">Submit</button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
