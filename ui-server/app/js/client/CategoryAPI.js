@@ -4,12 +4,20 @@ const Category = require('../models/Category');
 const selectedBranchName = require('../selectedBranch');
 
 class CategoryAPI {
+    static defaultHeaders() {
+        const headers = new Headers();
+        const branchName = selectedBranchName();
+        if (!!branchName) {
+            headers.append("X-Branch", selectedBranchName());
+        }
+
+        return headers;
+
+    }
     static getCategories() {
-        const myHeaders = new Headers();
-        myHeaders.append("X-Branch", selectedBranchName());
 
         return new Promise((resolve, reject) => {
-            fetch(url + '/categories', {headers: myHeaders}).then(function (response) {
+            fetch(url + '/categories', {headers: CategoryAPI.defaultHeaders()}).then(function (response) {
                 return response.json();
             }).then(function (object) {
                 const categories = object.map((o) => new Category(o.id, o.name));

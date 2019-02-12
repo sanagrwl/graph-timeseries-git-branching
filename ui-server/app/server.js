@@ -9,7 +9,8 @@ var express = require('express')
 var cors = require('cors');
 
 function branchName(request) {
-    return request.headers["x-branch"] || "master"
+    const b = (request.headers["x-branch"] || "").trim();
+    return !b ? 'master' : b;
 }
 
 var app = express();
