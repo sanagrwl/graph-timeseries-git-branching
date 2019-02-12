@@ -14,6 +14,8 @@ const uri = 'bolt://localhost';
 const driver = neo4j.driver(uri, neo4j.auth.basic('neo4j', '1234'));
 const session = driver.session();
 
+const maxTime = new Date(2037, 12, 31).getTime();
+
 class EventRepository {
     static serializeEvent(event) {
         const cloneEvent = JSON.parse(JSON.stringify(event));
@@ -61,14 +63,72 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
 
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
-                let catalog = null;
-                const events = result.records.map((record) => {
+                const categories = result.records.map((record) => {
                     const category_id = record.get(0)
                     const name = record.get(1).properties.name
                     return new Category(category_id, name)
                 });
 
-                resolve(events);
+                resolve(categories);
+            });
+        });
+    }
+
+    static getSubCategories(branch, categoryId) {
+        const command = `match (parent:category)-[:contains {branch: '${branch}'}]->(sc:category)-[:has_state {branch: '${branch}'}]->(s:state)
+        where parent.id = '${categoryId}'
+        return sc.id as category_id , s as state`;
+
+        return new Promise((resolve, reject) => {
+            session.run(command).then(result => {
+                const categories = result.records.map((record) => {
+                    const category_id = record.get(0)
+                    const name = record.get(1).properties.name
+                    return new Category(category_id, name)
+                });
+
+                resolve(categories);
+            });
+        });
+    }
+
+    static createCategory(branch, categoryId, name) {
+        const from = new Date().getTime();
+        const command = `CREATE (c:category {id: '${categoryId}'}) with c 
+        CREATE (s:state {name: '${name}'}) 
+        merge (c)-[r:has_state {branch: '${branch}', from: ${from}, to: ${maxTime}}]->(s) 
+        return c.id as category_id, s as state`;
+
+        return new Promise((resolve, reject) => {
+            session.run(command).then(result => {
+                resolve(result)
+            });
+        });
+    }
+
+    static maxTime() {
+        return new Date(2037, 12, 31).getTime()
+    }
+
+    static createBranch(branchName) {
+        const from = new Date().getTime();
+        const command = `CREATE (b:branch {name: '${branchName}', from: ${from}}) RETURN b`;
+        return new Promise((resolve, reject) => {
+            session.run(command).then(result => {
+                resolve(result)
+            });
+        });
+    }
+
+    static getBranches() {
+        const command = `match (b:branch) return b`;
+        return new Promise((resolve, reject) => {
+            session.run(command).then(result => {
+                const branches = result.records.map((record) => {
+                    return {name: record.get(0).properties.name}
+                });
+
+                resolve(branches)
             });
         });
     }

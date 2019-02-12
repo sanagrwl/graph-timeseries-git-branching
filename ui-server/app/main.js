@@ -8,13 +8,7 @@ const AddProductEvent = require('./js/events/AddProductEvent');
 const SetProductAttributeEvent = require('./js/events/SetProductAttributeEvent');
 
 $(function() {
-    const eventId = localStorage.getItem("eventId");
-
-    if (eventId) {
-        UiUpdater.setCatalog(eventId);
-    } else {
-        UiUpdater.setDefaultCatalog();
-    }
+    UiUpdater.getCategories();    
 });
 
 
@@ -70,9 +64,8 @@ $('#btnSubmitProduct').click(() => {
 
 $('#btnAddCategory').click(() => {
     const name = $('#categoryName').val();
-
-    const event = new AddCategoryEvent(catalog, generateUUID(), name);
-    UiUpdater.processEvent(event);
+    
+    UiUpdater.createCategory(name);
 
     $('#categoryFormModal').modal('hide');
     UiUpdater.resetUpdateForms();
@@ -90,8 +83,7 @@ $('#mergeEvents').click(() => {
 $('#btnAddBranch').click(() => {
     const name = $('#branchName').val();
 
-    const event = new AddBranchEvent(catalog, name);
-    UiUpdater.processEvent(event);
+    UiUpdater.createBranch(name);
 
     $('#branchFormModal').modal('hide');
     UiUpdater.resetUpdateForms();

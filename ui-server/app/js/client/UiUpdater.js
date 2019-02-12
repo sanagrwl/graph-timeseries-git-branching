@@ -4,15 +4,18 @@ const RemoveCategoryEvent = require('../events/RemoveCategoryEvent');
 const SetProductAttributeEvent = require('../events/SetProductAttributeEvent');
 const UiGraph = require('./UiGraph');
 const CatalogAPI = require('./CatalogAPI');
+const CategoryAPI = require('./CategoryAPI');
+const BranchAPI = require('./BranchAPI');
+const generateUUID = require('../util');
 
 const events = [];
 
 class UiUpdater {
-    static  updateCategoryTable(catalog) {
+    static  updateCategoryTable(categories) {
         const tbody = $("#tbody-categories");
 
         tbody.empty();
-        catalog.categories.forEach((category) => {
+        categories.forEach((category) => {
             tbody
                 .append($('<tr>')
                     .append($('<td>')
@@ -22,11 +25,18 @@ class UiUpdater {
                         .append(category.name)
                     )
                     .append($('<td>')
+                        // .append($('<button/>', {
+                        //     text: 'remove',
+                        //     class: 'btn btn-primary',
+                        //     click: () => {
+                        //         // UiUpdater.processEvent(new RemoveCategoryEvent(catalog, category.id));
+                        //     }
+                        // }))
                         .append($('<button/>', {
-                            text: 'remove',
+                            text: 'sub categories',
                             class: 'btn btn-primary',
                             click: () => {
-                                UiUpdater.processEvent(new RemoveCategoryEvent(catalog, category.id));
+                                UiUpdater.getSubCategories(category.id)
                             }
                         }))
                     )
@@ -102,7 +112,7 @@ class UiUpdater {
     }
 
     static update(catalog) {
-        UiUpdater.updateCategoryTable(catalog);
+        UiUpdater.updateCategoryTable(catalog.categories);
         UiUpdater.updateProductTable(catalog);
 
         const categoriesSelect = $('#productCategory');
@@ -158,6 +168,33 @@ class UiUpdater {
             UiUpdater.update(catalog);
         });
     }
+
+    static getCategories() {
+        CategoryAPI.getCategories().then((categories) => {
+            UiUpdater.updateCategoryTable(categories);
+        });
+    }
+
+    static getSubCategories(categoryId) {
+        CategoryAPI.getSubCategories(categoryId).then((categories) => {
+            if (!!categories && categories.length > 0) {
+                UiUpdater.updateCategoryTable(categories);
+            }
+        });
+    }
+
+    static createCategory(name) {
+        CategoryAPI.createCategory(generateUUID(), name).then((result) => {
+            
+        });
+    }
+
+    static createBranch(name) {
+        BranchAPI.createBranch(name).then((data) => {
+
+        })
+    }
+
 
     static setDefaultCatalog() {
         CatalogAPI.getDefaultCatalog().then((catalog) => {

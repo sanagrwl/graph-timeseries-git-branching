@@ -35,12 +35,6 @@ app.get('/events/:id', function(request, response){
     })
 });
 
-app.get('/categories', function(request, response){
-    Controller.getCategories("master", (categories) => {
-        response.send(categories);    // echo the result back
-    })
-});
-
 app.delete('/events/:id', function(request, response){
     Controller.deleteEvent(request.params.id).then((catalog) => {
         response.send(catalog);    // echo the result back
@@ -57,6 +51,38 @@ app.post('/events/:id/merge/:from', function(request, response){
         response.send(e);    // echo the result back
     })
 
+});
+
+app.get('/categories', function(request, response){
+    Controller.getCategories("master", (categories) => {
+        response.send(categories);    // echo the result back
+    })
+});
+
+app.get('/categories/:id', function(request, response){
+    Controller.getSubCategories("master", request.params.id, (categories) => {
+        response.send(categories);    // echo the result back
+    })
+});
+
+app.post('/categories', function(request, response){
+    const id = request.body.id
+    const name = request.body.name
+    Controller.createCategory("master", id, name, (payload) => {
+        response.send(payload);  
+    })
+});
+
+app.get('/branches', function(request, response) {
+    Controller.getBranches((branches) => {
+        response.send(branches);
+    })
+});
+
+app.post('/branches', function(request, response) {
+    Controller.createBranch(request.body.name, (payload) => {
+        response.send(payload);
+    })
 });
 
 app.listen(80);

@@ -20,6 +20,30 @@ class Controller {
         })
     }
 
+    static getSubCategories(branch, categoryId, callback) {
+        EventRepository.getSubCategories(branch, categoryId).then((categories) => {
+            callback(categories)
+        })
+    }
+
+    static createCategory(branch, categoryId, name, callback) {
+        EventRepository.createCategory(branch, categoryId, name).then(() => {
+            callback({})
+        })
+    }
+
+    static getBranches(callback) {
+        EventRepository.getBranches().then((result) => {
+            callback(result)
+        })
+    }
+
+    static createBranch(branchName, callback) {
+        EventRepository.createBranch(branchName).then((result) => {
+            callback({})
+        })
+    }
+
     static getCatalog(eventId) {
         return EventRepository.getCatalog(eventId);
     }
