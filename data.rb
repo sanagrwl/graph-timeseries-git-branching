@@ -122,7 +122,7 @@ match (a:category), (b:category)
 where a.id = line[0] and b.id = line[1]
 create (a)-[r:contains {branch: line[2], from: toInt(line[3]), to: 2148530400000}]->(b);
 
-LOAD CSV FROM "file:///#{$top_categories_relations_file}.csv" AS line
+LOAD CSV FROM "file:///#{$top_categories_relations_file}" AS line
 match (a:start {id: "start"}), (b:category)
 where b.id = line[0]
 create (a)-[r:contains {branch: line[1], from: toInt(line[2]), to: 2148530400000}]->(b);
