@@ -21,7 +21,7 @@ class CategoryAPI {
             fetch(url + '/categories', {headers: CategoryAPI.defaultHeaders()}).then(function (response) {
                 return response.json();
             }).then(function (object) {
-                const categories = object.map((o) => new Category(o.id, o.name));
+                const categories = object.map((o) => new Category(o.parentId, o.id, o.name));
                 resolve(categories);
             });
         });
@@ -36,7 +36,7 @@ class CategoryAPI {
             fetch(url + '/categories/' + categoryId, payload).then(function (response) {
                 return response.json();
             }).then(function (object) {
-                const categories = object.map((o) => new Category(o.id, o.name));
+                const categories = object.map((o) => new Category(o.parentId, o.id, o.name));
                 resolve(categories);
             });
         });
@@ -84,6 +84,23 @@ class CategoryAPI {
             console.log(payload);
 
             fetch(url + '/products/' + productId, payload).then(function (response) {
+                return response.json();
+            }).then(function (object) {
+                resolve();
+            });
+        });
+    }
+
+    static deleteCategory(categoryId) {
+        return new Promise((resolve, reject) => {
+            const payload = {
+                method: 'delete',
+                headers: CategoryAPI.defaultHeaders()
+            };
+
+            console.log(payload);
+
+            fetch(url + '/categories/' + categoryId, payload).then(function (response) {
                 return response.json();
             }).then(function (object) {
                 resolve();

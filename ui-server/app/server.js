@@ -78,6 +78,12 @@ app.get('/categories/:id/products', function(request, response){
     })
 });
 
+app.delete('/categories/:id', function(request, response){
+    Controller.deleteCategory(branchName(request), request.params.id, () => {
+        response.send({});
+    })
+});
+
 app.delete('/products/:id', function(request, response){
     Controller.deleteProduct(branchName(request), request.params.id, () => {
         response.send({});

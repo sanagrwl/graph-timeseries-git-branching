@@ -44,6 +44,12 @@ class Controller {
         })
     }
 
+    static deleteCategory(branch, categoryId, callback) {
+        EventRepository.deleteCategory(branch, categoryId).then(() => {
+            callback({})
+        })
+    }
+
     static getBranches(callback) {
         EventRepository.getBranches().then((result) => {
             callback(result)

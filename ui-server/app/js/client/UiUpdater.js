@@ -34,13 +34,6 @@ class UiUpdater {
                         .append(category.name)
                     )
                     .append($('<td>')
-                        // .append($('<button/>', {
-                        //     text: 'remove',
-                        //     class: 'btn btn-primary',
-                        //     click: () => {
-                        //         // UiUpdater.processEvent(new RemoveCategoryEvent(catalog, category.id));
-                        //     }
-                        // }))
                         .append($('<button/>', {
                             text: 'sub categories',
                             class: 'btn btn-primary',
@@ -53,6 +46,13 @@ class UiUpdater {
                             class: 'btn btn-primary',
                             click: () => {
                                 UiUpdater.getProducts(category.id)
+                            }
+                        }))
+                        .append($('<button/>', {
+                            text: 'delete',
+                            class: 'btn btn-primary',
+                            click: () => {
+                                UiUpdater.deleteCategory(category.parentId, category.id)
                             }
                         }))
                     )
@@ -228,6 +228,14 @@ class UiUpdater {
     static removeProduct(categoryId, productId) {
         CategoryAPI.deleteProduct(productId).then((result) => {
             UiUpdater.getProducts(categoryId);
+        });
+    }
+
+    static deleteCategory(parentId, categoryId) {
+console.log("deleting cat with parent", parentId)
+
+        CategoryAPI.deleteCategory(categoryId).then((result) => {
+            !!parentId ? UiUpdater.getSubCategories(parentId) : UiUpdater.getCategories();
         });
     }
 

@@ -81,7 +81,7 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
                 const categories = result.records.map((record) => {
                     const category_id = record.get(0).properties.id
                     const name = `Category ${category_id}`
-                    return new Category(category_id, name)
+                    return new Category(null, category_id, name)
                 });
 
                 resolve(categories);
@@ -89,9 +89,9 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
         });
     }
 
-    static getSubCategories(branch, categoryId) {
+    static getSubCategories(branch, parentId) {
         const command = `
-        MATCH (branch:branch {name:'${branch}'})-[u:update]->(rn:relation_node)<-[:rs]-(c:category {id: '${categoryId}'})
+        MATCH (branch:branch {name:'${branch}'})-[u:update]->(rn:relation_node)<-[:rs]-(c:category {id: '${parentId}'})
         WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC
         WITH rn,HEAD(COLLECT(utype)) AS lastut
         WHERE lastut="ADD"
@@ -106,7 +106,7 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
                 const categories = result.records.map((record) => {
                     const cat_id = record.get(0).properties.id
                     const name = `Category ${cat_id}`
-                    return new Category(cat_id, name)
+                    return new Category(parentId, cat_id, name)
                 });
 
                 resolve(categories);
@@ -177,17 +177,27 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
 
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
-                const products = result.records.map((record) => {
-                    const product_id = record.get(0).properties.id
-                    const name = `Product ${product_id}`
-                    return new Product(product_id, name)
-                });
-
-                resolve(products);
+                resolve({});
             });
         });
+    }
 
-        console.log(`getProducts `, command)
+    static deleteCategory(branch, categoryId) {
+        const command = `
+        MATCH (branch:branch {name:"${branch}"})-[:update]->(rn:relation_node)-[:rs|re]-(c:category {id:"${categoryId}"})
+            WITH branch, COLLECT(DISTINCT rn) AS rns
+        FOREACH ( relation_node IN rns |
+            CREATE (branch)-[:update {type:"REMOVE", from: ${now()}}]->(relation_node)
+        )
+        `;
+
+        console.log('deleteCategory', command);
+
+        return new Promise((resolve, reject) => {
+            session.run(command).then(result => {
+                resolve();
+            });
+        });
     }
 
     static createBranch(branch) {
