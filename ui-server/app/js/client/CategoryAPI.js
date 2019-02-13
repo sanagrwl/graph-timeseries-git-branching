@@ -29,7 +29,11 @@ class CategoryAPI {
 
     static getSubCategories(categoryId) {
         return new Promise((resolve, reject) => {
-            fetch(url + '/categories/' + categoryId).then(function (response) {
+            const payload = {
+                headers: CategoryAPI.defaultHeaders(),
+            };
+
+            fetch(url + '/categories/' + categoryId, payload).then(function (response) {
                 return response.json();
             }).then(function (object) {
                 const categories = object.map((o) => new Category(o.id, o.name));
@@ -40,7 +44,11 @@ class CategoryAPI {
 
     static getProducts(categoryId) {
         return new Promise((resolve, reject) => {
-            fetch(url + '/categories/' + categoryId + "/products").then(function (response) {
+            const payload = {
+                headers: CategoryAPI.defaultHeaders(),
+            };
+
+            fetch(url + '/categories/' + categoryId + "/products", payload).then(function (response) {
                 return response.json();
             }).then(function (object) {
                 const products = object.map((o) => new Product(o.id, o.name));
@@ -59,6 +67,23 @@ class CategoryAPI {
             };
 
             fetch(url + '/categories', payload).then(function (response) {
+                return response.json();
+            }).then(function (object) {
+                resolve();
+            });
+        });
+    }
+
+    static deleteProduct(productId) {
+        return new Promise((resolve, reject) => {
+            const payload = {
+                method: 'delete',
+                headers: CategoryAPI.defaultHeaders()
+            };
+
+            console.log(payload);
+
+            fetch(url + '/products/' + productId, payload).then(function (response) {
                 return response.json();
             }).then(function (object) {
                 resolve();

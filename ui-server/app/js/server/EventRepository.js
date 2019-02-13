@@ -17,6 +17,8 @@ const session = driver.session();
 
 const endOfTime = new Date(2037, 12, 31).getTime();
 
+const now = () => new Date().getTime();
+
 class EventRepository {
     static serializeEvent(event) {
         const cloneEvent = JSON.parse(JSON.stringify(event));
@@ -102,9 +104,9 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
                 const categories = result.records.map((record) => {
-                    const category_id = record.get(0).properties.id
-                    const name = `Category ${categoryId}`
-                    return new Category(category_id, name)
+                    const cat_id = record.get(0).properties.id
+                    const name = `Category ${cat_id}`
+                    return new Category(cat_id, name)
                 });
 
                 resolve(categories);
@@ -162,11 +164,35 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
         console.log(`getProducts `, command)
     }
 
-    static createBranch(branch) {
-        const from = new Date().getTime();
-
+    static deleteProduct(branch, productId) {
         const command = `
-        create (branch:branch {name: '${branch}', from: ${from}, to: ${endOfTime}}) 
+        MATCH (branch:branch {name:"${branch}"})-[:update]->(rn:relation_node)-[:re]->(c:product {id:"${productId}"}) 
+        WITH branch, COLLECT(DISTINCT rn) AS rns 
+        FOREACH ( relation_node IN rns | 
+            CREATE (branch)-[:update {type:"REMOVE", from: ${now()}}]->(relation_node)
+        )
+        `;
+
+        console.log('deleteProduct', command);
+
+        return new Promise((resolve, reject) => {
+            session.run(command).then(result => {
+                const products = result.records.map((record) => {
+                    const product_id = record.get(0).properties.id
+                    const name = `Product ${product_id}`
+                    return new Product(product_id, name)
+                });
+
+                resolve(products);
+            });
+        });
+
+        console.log(`getProducts `, command)
+    }
+
+    static createBranch(branch) {
+        const command = `
+        create (branch:branch {name: '${branch}', from: ${now()}, to: ${endOfTime}}) 
         with branch 
         MATCH (:branch {name:"master"})-[u:update]->(rn:relation_node) 
         WITH branch, rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC 
@@ -174,7 +200,7 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
         WHERE lastut="ADD" 
         WITH branch, rn, COLLECT(DISTINCT rn) as rns 
         FOREACH (relation_node IN rns | 
-            CREATE (branch)-[:update {type:"ADD", from: 1400}]->(relation_node) 
+            CREATE (branch)-[:update {type:"ADD", from: ${now()}}]->(relation_node) 
         )
         `;
 

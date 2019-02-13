@@ -60,7 +60,7 @@ class UiUpdater {
         });
     }
 
-    static updateProductTable(products) {
+    static updateProductTable(categoryId, products) {
         const tbody = $("#tbody-products");
 
         tbody.empty();
@@ -106,7 +106,7 @@ class UiUpdater {
                             text: 'remove',
                             class: 'btn btn-primary',
                             click: () => {
-                                UiUpdater.processEvent(new RemoveProductEvent(catalog, product.id));
+                                UiUpdater.removeProduct(categoryId, product.id);
                             }
                         }))
                     )
@@ -201,7 +201,7 @@ class UiUpdater {
 
     static getProducts(categoryId) {
         CategoryAPI.getProducts(categoryId).then((products) => {
-            UiUpdater.updateProductTable(products);
+            UiUpdater.updateProductTable(categoryId, products);
         });
     }
 
@@ -222,6 +222,12 @@ class UiUpdater {
             if (!!branches && branches.length > 0) {
                 UiUpdater.updateBranchesList(branches);
             }
+        });
+    }
+
+    static removeProduct(categoryId, productId) {
+        CategoryAPI.deleteProduct(productId).then((result) => {
+            UiUpdater.getProducts(categoryId);
         });
     }
 

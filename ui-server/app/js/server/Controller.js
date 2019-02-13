@@ -32,6 +32,12 @@ class Controller {
         })
     }
 
+    static deleteProduct(branch, productId, callback) {
+        EventRepository.deleteProduct(branch, productId).then(() => {
+            callback()
+        })
+    }
+
     static createCategory(branch, categoryId, name, callback) {
         EventRepository.createCategory(branch, categoryId, name).then(() => {
             callback({})
