@@ -127,7 +127,7 @@ match (a:start {id: "start"}), (b:category)
 where b.id = line[0]
 create (a)-[r:contains {branch: line[1], from: toInt(line[2]), to: 2148530400000}]->(b);
 
-#{bold("Start app:")}
+#{bold("Start app:")} (inside ui-server directory)
 #{bold("Frontend")}: npm run server
 #{bold("Server")}: node app/server.js
 
