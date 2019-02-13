@@ -63,14 +63,12 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
     static getCategories(branch) {
         console.log(`branch ${branch}`)
         const command = `
-        match (branch:branch {name: '${branch}'})
-        with branch
-        match (:start)-[t:contains]->(c:category)-[:has_state]->(s:state) where t.branch in ["master", branch.name] 
-        with branch, s, c, t order by t.from desc 
-        with branch, s, c, head(collect(t)) as latest 
-        where (latest.from < branch.from and latest.to > branch.from and latest.branch = 'master') or 
-            (latest.branch = branch.name and latest.to = ${endOfTime})
-        return c, s
+        MATCH (branch:branch {name:'${branch}'})-[u:update]->(rn:relation_node)<-[:rs]-(start:start {id: 'start'}) 
+        WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC 
+        WITH rn,HEAD(COLLECT(utype)) AS lastut 
+        WHERE lastut="ADD" 
+        MATCH (start)-[:rs]->(rn)-[:re]->(c:category) 
+        RETURN c
         `;
 
         console.log(command);
@@ -79,7 +77,7 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
             session.run(command).then(result => {
                 const categories = result.records.map((record) => {
                     const category_id = record.get(0).properties.id
-                    const name = record.get(1).properties.name
+                    const name = `Category ${category_id}`
                     return new Category(category_id, name)
                 });
 
@@ -89,15 +87,22 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
     }
 
     static getSubCategories(branch, categoryId) {
-        const command = `match (parent:category)-[:contains {branch: '${branch}'}]->(sc:category)-[:has_state {branch: '${branch}'}]->(s:state)
-        where parent.id = '${categoryId}'
-        return sc.id as category_id , s as state`;
+        const command = `
+        MATCH (branch:branch {name:'${branch}'})-[u:update]->(rn:relation_node)<-[:rs]-(c:category {id: '${categoryId}'})
+        WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC
+        WITH rn,HEAD(COLLECT(utype)) AS lastut
+        WHERE lastut="ADD"
+        MATCH (rn)-[:re]->(c:category)
+        RETURN c
+        `;
+
+        console.log("getSubCategories", command);
 
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
                 const categories = result.records.map((record) => {
-                    const category_id = record.get(0)
-                    const name = record.get(1).properties.name
+                    const category_id = record.get(0).properties.id
+                    const name = `Category ${categoryId}`
                     return new Category(category_id, name)
                 });
 
@@ -110,13 +115,13 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
         console.log(`createCategory: ${branch}`);
 
         const from = new Date().getTime();
-        const command = `CREATE (c:category {id: '${categoryId}'}) with c 
-        CREATE (s:state {name: '${name}'}) 
-        merge (c)-[r:has_state {branch: '${branch}', from: ${from}, to: ${endOfTime}}]->(s)
-        with c, s
-        match (start:start {id: 'start'})
-        merge (start)-[:contains {branch: '${branch}', from: ${from}, to: ${endOfTime}}]->(c)
-        return c.id as category_id, s as state`;
+        const command = `
+        match (branch:branch {name: '${branch}'}), (sn:start {id: 'start'}) 
+        create (c:category {id: '${categoryId}'}) 
+        create (rn:relation_node {id: (sn.id + "-" + '${categoryId}')}) 
+        create (sn)-[:rs]->(rn)-[:re]->(c) 
+        create (branch)-[:update {type: 'ADD', from: ${from}}]->(rn)
+        `;
 
         console.log(command)
 
@@ -131,9 +136,22 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
         return new Date(2037, 12, 31).getTime()
     }
 
-    static createBranch(branchName) {
+    static createBranch(branch) {
+        console.log(`createBranch: ${branch}`)
         const from = new Date().getTime();
-        const command = `CREATE (b:branch {name: '${branchName}', from: ${from}, to: ${endOfTime}}) RETURN b`;
+
+        const command = `
+        create (branch:branch {name: '${branch}', from: ${from}, to: ${endOfTime}}) 
+        with branch 
+        MATCH (:branch {name:"master"})-[u:update]->(rn:relation_node) 
+        WITH branch, rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC 
+        WITH branch, rn,HEAD(COLLECT(utype)) AS lastut 
+        WHERE lastut="ADD" 
+        WITH branch, rn, COLLECT(DISTINCT rn) as rns 
+        FOREACH (relation_node IN rns | 
+            CREATE (branch)-[:update {type:"ADD", from: 1400}]->(relation_node) 
+        )
+        `;
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
                 resolve(result)

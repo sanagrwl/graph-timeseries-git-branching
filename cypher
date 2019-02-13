@@ -6,9 +6,7 @@ CREATE CONSTRAINT ON (start:start) ASSERT start.id IS UNIQUE;
 create (b:branch {name: 'master', from: 0, to: 2148530400000});
 
 LOAD CSV FROM "file:///categories.csv" AS line
-create (c:category {id: line[0]})
-create (s:state {name: line[1]})
-create (c)-[r:has_state {branch: line[2], from: toInt(line[3])}]->(s);
+create (c:category {id: line[0]});
 
 LOAD CSV FROM "file:///categories-relations.csv" AS line
 match (a:category), (b:category), (branch:branch)
@@ -31,8 +29,6 @@ RETURN a.id AS FROM,b.id AS To ORDER BY FROM,To
 // create a top level category
 match (branch:branch {name: 'master'}), (sn:start {id: 'start'})
 create (c:category {id: "test1"})
-create (s:state {name: "test 1"})
-create (c)-[r:has_state {branch: 'master', from: 1300}]->(s)
 create (rn:relation_node {id: (sn.id + "-" + "test1")})
 create (sn)-[:rs]->(rn)-[:re]->(c)
 create (branch)-[:update {type: 'ADD', from: 1300}]->(rn);
