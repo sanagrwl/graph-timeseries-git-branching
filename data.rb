@@ -83,19 +83,52 @@ total_categories = top_categories_count * total_categories_under_one_root
 
 create_categories(total_categories)
 create_all_relationships(top_categories_count, sub_categories_per_category, category_levels)
-puts "Total Categories: #{total_categories}"
 
 
 
-# create relationships
-# File.open("toomanycategoryrelationships.csv", 'w') do |file|
-#     sub_cat_count = 3
-#     parent_cat_id = 1
-#     (1..10).to_a.map do |counter|
-#         last_cat_id = create_parent_tree(parent_cat_id, sub_cat_count, file).max
-#         parent_cat_id = last_cat_id + 1
-#         parent_cat_id
-#     end.concat([1]).each do |top_level_cat_id|
-#         write_relationship("start", top_level_cat_id, file)
-#     end
-# end
+def bold(message)
+    "\e[1m#{message}\e[0m"
+end
+
+puts <<-HEREDOC
+
+#{bold("Total Categories created:")} #{total_categories}
+
+#{bold("Start Neo4j:")}
+
+docker run --publish=7474:7474 --publish=7687:7687 --volume=$HOME/work/neo4j/data:/data --volume=/path/to/csv/folder:/var/lib/neo4j/import neo4j
+
+#{bold("First Time:")}
+
+Neo4j browser: http://localhost:7474/
+#{bold("Change password")} to #{bold("1234")}
+
+#{bold("Load Database from Neo4j Browser (ensure multiline is selected in settings:")}
+
+MATCH (n) DETACH DELETE n;
+
+create (s:start {id: "start"});
+CREATE CONSTRAINT ON (start:start) ASSERT start.id IS UNIQUE;
+
+create (b:branch {name: 'master', from: 0, to: 2148530400000});
+
+LOAD CSV FROM "file:///#{$categories_file}" AS line
+create (c:category {id: line[0]})
+create (s:state {name: line[1]})
+create (c)-[r:has_state {branch: line[2], from: toInt(line[3]), to: 2148530400000}]->(s);
+
+LOAD CSV FROM "file:///#{$categories_relations_file}" AS line
+match (a:category), (b:category)
+where a.id = line[0] and b.id = line[1]
+create (a)-[r:contains {branch: line[2], from: toInt(line[3]), to: 2148530400000}]->(b);
+
+LOAD CSV FROM "file:///#{$top_categories_relations_file}.csv" AS line
+match (a:start {id: "start"}), (b:category)
+where b.id = line[0]
+create (a)-[r:contains {branch: line[1], from: toInt(line[2]), to: 2148530400000}]->(b);
+
+#{bold("Start app:")}
+#{bold("Frontend")}: npm run server
+#{bold("Server")}: node app/server.js
+
+HEREDOC
