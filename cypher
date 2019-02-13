@@ -40,7 +40,7 @@ create (branch)-[:update {type: 'ADD', from: 1300}]->(rn);
 // get top level categories - deprecated
 match (start:start)-[:rs]->(rn:relation_node)-[:re]->(c:category) return start,rn,c
 
-// delete a category
+// delete a category - revist node creation
 
 MATCH (branch:branch {name:"master"})-[:update]->(rn:relation_node)-[:rs|re]-(c:category {id:"test1"})
 WITH branch, COLLECT(DISTINCT rn) AS rns
@@ -55,3 +55,15 @@ WITH rn,HEAD(COLLECT(utype)) AS lastut
 WHERE lastut="ADD"
 MATCH (start)-[:rs]->(rn)-[:re]->(c:category)
 RETURN start,c,rn
+
+// create branch : sandbox at time 1400
+create (branch:branch {name: 'sandeep4', from: 1400, to: 2148530400000})
+with branch
+MATCH (:branch {name:"master"})-[u:update]->(rn:relation_node)
+WITH branch, rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC
+WITH branch, rn,HEAD(COLLECT(utype)) AS lastut
+WHERE lastut="ADD"
+WITH branch, rn, COLLECT(DISTINCT rn) as rns
+FOREACH (relation_node IN rns |
+    CREATE (branch)-[:update {type:"ADD", from: 1400}]->(relation_node)
+);
