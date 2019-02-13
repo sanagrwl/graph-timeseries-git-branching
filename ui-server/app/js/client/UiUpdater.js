@@ -48,16 +48,23 @@ class UiUpdater {
                                 UiUpdater.getSubCategories(category.id)
                             }
                         }))
+                        .append($('<button/>', {
+                            text: 'products',
+                            class: 'btn btn-primary',
+                            click: () => {
+                                UiUpdater.getProducts(category.id)
+                            }
+                        }))
                     )
                 )
         });
     }
 
-    static updateProductTable(catalog) {
+    static updateProductTable(products) {
         const tbody = $("#tbody-products");
 
         tbody.empty();
-        catalog.products.forEach((product) => {
+        (products || []).forEach((product) => {
             let categoryName = '';
             if (product.category) {
                 const category = catalog.getCategory(product.category);
@@ -189,6 +196,12 @@ class UiUpdater {
             if (!!categories && categories.length > 0) {
                 UiUpdater.updateCategoryTable(categories);
             }
+        });
+    }
+
+    static getProducts(categoryId) {
+        CategoryAPI.getProducts(categoryId).then((products) => {
+            UiUpdater.updateProductTable(products);
         });
     }
 

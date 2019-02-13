@@ -6,6 +6,7 @@ const RemoveProductEvent = require('../events/RemoveProductEvent');
 const SetProductAttributeEvent = require('../events/SetProductAttributeEvent');
 const AddBranchEvent = require('../events/AddBranchEvent');
 const Category = require('../models/Category');
+const Product = require('../models/Product');
 
 const neo4j = require('neo4j-driver').v1;
 
@@ -136,8 +137,32 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
         return new Date(2037, 12, 31).getTime()
     }
 
+    static getProducts(branch, categoryId) {
+        const command = `
+        MATCH (branch:branch {name:"${branch}"})-[u:update]->(rn:relation_node)<-[:rs]-(c:category {id: '${categoryId}'}) 
+        WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC 
+        WITH rn,HEAD(COLLECT(utype)) AS lastut 
+        WHERE lastut="ADD" 
+        MATCH (c)-[:rs]->(rn)-[:re]->(p:product) 
+        RETURN p
+        `;
+
+        return new Promise((resolve, reject) => {
+            session.run(command).then(result => {
+                const products = result.records.map((record) => {
+                    const product_id = record.get(0).properties.id
+                    const name = `Product ${product_id}`
+                    return new Product(product_id, name)
+                });
+
+                resolve(products);
+            });
+        });
+
+        console.log(`getProducts `, command)
+    }
+
     static createBranch(branch) {
-        console.log(`createBranch: ${branch}`)
         const from = new Date().getTime();
 
         const command = `
@@ -152,6 +177,8 @@ CREATE (parent)-[r:APPEND {parentId: ${parentId}}]->(e:Event ${serializedEvent})
             CREATE (branch)-[:update {type:"ADD", from: 1400}]->(relation_node) 
         )
         `;
+
+        console.log(`createBranch `, command)
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
                 resolve(result)

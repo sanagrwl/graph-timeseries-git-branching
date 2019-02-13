@@ -26,6 +26,12 @@ class Controller {
         })
     }
 
+    static getProducts(branch, categoryId, callback) {
+        EventRepository.getProducts(branch, categoryId).then((products) => {
+            callback(products)
+        })
+    }
+
     static createCategory(branch, categoryId, name, callback) {
         EventRepository.createCategory(branch, categoryId, name).then(() => {
             callback({})

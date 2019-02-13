@@ -38,6 +38,18 @@ class CategoryAPI {
         });
     }
 
+    static getProducts(categoryId) {
+        return new Promise((resolve, reject) => {
+            fetch(url + '/categories/' + categoryId + "/products").then(function (response) {
+                return response.json();
+            }).then(function (object) {
+                const products = object.map((o) => new Product(o.id, o.name));
+                resolve(products);
+            });
+        });
+    }
+
+
     static createCategory(categoryId, name) {
         return new Promise((resolve, reject) => {
             const payload = {

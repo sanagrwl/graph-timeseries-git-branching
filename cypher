@@ -63,3 +63,12 @@ WITH branch, rn, COLLECT(DISTINCT rn) as rns
 FOREACH (relation_node IN rns |
     CREATE (branch)-[:update {type:"ADD", from: 1400}]->(relation_node)
 );
+
+
+// get all products for a category id 1205
+MATCH (branch:branch {name:"master"})-[u:update]->(rn:relation_node)<-[:rs]-(c:category {id: '1205'})
+WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC
+WITH rn,HEAD(COLLECT(utype)) AS lastut
+WHERE lastut="ADD"
+MATCH (c)-[:rs]->(rn)-[:re]->(p:product)
+RETURN c,rn,p

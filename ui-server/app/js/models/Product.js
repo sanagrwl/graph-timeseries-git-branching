@@ -1,11 +1,7 @@
 class Product {
-    constructor(id, name, price, visible, color, category) {
+    constructor(id, name) {
         this.id = id;
         this.name = name;
-        this.price = price;
-        this.visible = visible;
-        this.color = color;
-        this.category = category;
     }
 }
 

@@ -72,6 +72,13 @@ app.get('/categories/:id', function(request, response){
     })
 });
 
+app.get('/categories/:id/products', function(request, response){
+    Controller.getProducts(branchName(request), request.params.id, (products) => {
+        response.send(products);
+    })
+});
+
+
 app.post('/categories', function(request, response){
     const id = request.body.id
     const name = request.body.name
