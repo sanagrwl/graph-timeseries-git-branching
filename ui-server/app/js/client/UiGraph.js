@@ -3,7 +3,9 @@ class UiGraph {
     static update(events, selectedEventId, selectedEventId2, callbackClick) {
         UiGraph.events = events;
 
-        const rootNode = UiGraph.eventsAsTree(events, selectedEventId, selectedEventId2);
+        const rootNode = events.length > 0 ? 
+            UiGraph.eventsAsTree(events, selectedEventId, selectedEventId2)
+            : {};
         const simple_chart_config = {
             chart: {
                 container: "#graph",
@@ -44,13 +46,14 @@ class UiGraph {
 
         let root = null;
         events.forEach((event) => {
-            const node = nodesById[event.id];
+            const node = nodesById[event._id];
 
-            if (event.parentId) {
-                nodesById[event.parentId].children.push(node);
-            } else {
+            if (!node.parentId) {
                 root = node;
+            } else {
+                nodesById[node.parentId].children.push(node);
             }
+            
         });
 
         return root;
@@ -68,7 +71,7 @@ class UiGraph {
             }
 
             const node = {
-                parentId: event.parentId,
+                parentId: i === 0 ? null : events[i - 1]._id,
                 children: [],
                 innerHTML: $('<p/>', {
                     text: name
@@ -83,7 +86,7 @@ class UiGraph {
                 node.HTMLclass = 'selectedSecond';
             }
 
-            nodesById[event.id] = node;
+            nodesById[event._id] = node;
             i++;
         });
         return nodesById;

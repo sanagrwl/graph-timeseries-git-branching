@@ -1,13 +1,13 @@
 class RemoveCategoryEvent {
-    constructor(catalog, categoryId) {
-        this.catalog = catalog;
+    constructor(categoryId) {
         this.categoryId = categoryId;
         this.name = 'RemoveCategoryEvent';
-        this.parent = null;
+
+        this.created_at = new Date().getTime();    
     }
 
     process() {
-        this.catalog.removeCategory(this.categoryId);
+        
     }
 }
 

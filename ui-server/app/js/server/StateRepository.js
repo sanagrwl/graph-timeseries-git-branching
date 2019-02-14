@@ -4,14 +4,9 @@ const categoryCollection = "categories"
 
 class StateRepository {
     static addCategory(event) {
-        return new Promise((resolve, reject) => {
-            const eventData = JSON.parse(JSON.stringify(event));
-            delete eventData.name
-        
-            const result = Client.insert(categoryCollection, [eventData]);
-            console.log(result);
-            resolve(event);
-        });
+        const eventData = JSON.parse(JSON.stringify(event));
+        delete eventData.name
+        return Client.insert(categoryCollection, [eventData]);
     }
     static processEvent(event) {
         switch (event.name) {

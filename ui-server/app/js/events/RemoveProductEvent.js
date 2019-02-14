@@ -1,13 +1,13 @@
 class RemoveProductEvent {
-    constructor(catalog, productId) {
-        this.catalog = catalog;
-        this.productId = productId;
+    constructor(productId) {
         this.name = 'RemoveProductEvent';
-        this.parent = null;
+        this.created_at = new Date().getTime();
+
+        this.productId = productId;
     }
 
     process() {
-        this.catalog.removeProduct(this.productId);
+
     }
 }
 

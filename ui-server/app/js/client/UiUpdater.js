@@ -1,7 +1,3 @@
-const AddCatalogEvent = require('../events/AddCatalogEvent');
-const RemoveProductEvent = require('../events/RemoveProductEvent');
-const RemoveCategoryEvent = require('../events/RemoveCategoryEvent');
-const SetProductAttributeEvent = require('../events/SetProductAttributeEvent');
 const UiGraph = require('./UiGraph');
 const CatalogAPI = require('./CatalogAPI');
 const CategoryAPI = require('./CategoryAPI');
@@ -127,6 +123,19 @@ class UiUpdater {
         });
     }
 
+    static updateEvents(events) {
+        const selectedEventId = (!!events && events.length > 0) ? events[0]._id : null
+        UiGraph.update(events, selectedEventId, null, (event, ctrl) => {
+            if (ctrl) {
+                UiUpdater.secondEventId = event.id;
+                $('#mergeEvents').prop("disabled",false);
+            } else {
+                $('#mergeEvents').prop("disabled",true);
+                UiUpdater.setCatalog(event.id);
+            }
+        });
+    }
+
     static update(catalog) {
         UiUpdater.updateCategoryTable(catalog.categories);
         UiUpdater.updateProductTable(catalog);
@@ -177,6 +186,12 @@ class UiUpdater {
         $('#categoryName').val('');
     }
 
+    static refresh() {
+        UiUpdater.getCategories();   
+        UiUpdater.getEvents();
+    }
+    
+
     static setCatalog(eventId) {
         UiUpdater.eventId = eventId;
         CatalogAPI.getCatalog(eventId).then((catalog) => {
@@ -208,6 +223,7 @@ class UiUpdater {
     static createCategory(name) {
         CategoryAPI.createCategory(generateUUID(), name).then((result) => {
             UiUpdater.getCategories();
+            UiUpdater.getEvents();
         });
     }
 
@@ -225,6 +241,12 @@ class UiUpdater {
         });
     }
 
+    static getEvents() {
+        BranchAPI.getEvents().then(events => {
+            UiUpdater.updateEvents(events)
+        })
+    }
+
     static removeProduct(categoryId, productId) {
         CategoryAPI.deleteProduct(productId).then((result) => {
             UiUpdater.getProducts(categoryId);
@@ -232,8 +254,6 @@ class UiUpdater {
     }
 
     static deleteCategory(parentId, categoryId) {
-console.log("deleting cat with parent", parentId)
-
         CategoryAPI.deleteCategory(categoryId).then((result) => {
             !!parentId ? UiUpdater.getSubCategories(parentId) : UiUpdater.getCategories();
         });

@@ -12,7 +12,6 @@ const now = () => new Date().getTime();
 class GraphRepository {
 
     static getCategories(branch) {
-        console.log(`branch ${branch}`)
         const command = `
         MATCH (branch:branch {name:'${branch}'})-[u:update]->(rn:relation_node)<-[:rs]-(start:start {id: 'start'}) 
         WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC 
@@ -22,7 +21,7 @@ class GraphRepository {
         RETURN c
         `;
 
-        console.log(command);
+        console.log("getCategories", command);
 
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
@@ -78,7 +77,7 @@ class GraphRepository {
 
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
-                resolve(event)
+                resolve(result)
             });
         });
     }
@@ -105,7 +104,7 @@ class GraphRepository {
             });
         });
 
-        console.log(`getProducts `, command)
+        console.log("getProducts", command)
     }
 
     static deleteProduct(branch, productId) {
@@ -158,7 +157,7 @@ class GraphRepository {
         )
         `;
 
-        console.log(`createBranch `, command)
+        console.log('createBranch', command);
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
                 resolve(result)

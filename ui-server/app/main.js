@@ -1,14 +1,10 @@
 const generateUUID = require('./js/util');
 const UiUpdater = require('./js/client/UiUpdater');
-const CatalogAPI = require('./js/client/CatalogAPI');
-const AddCatalogEvent = require('./js/events/AddCatalogEvent');
-const AddCategoryEvent = require('./js/events/AddCategoryEvent');
-const AddBranchEvent = require('./js/events/AddBranchEvent');
 const AddProductEvent = require('./js/events/AddProductEvent');
 const SetProductAttributeEvent = require('./js/events/SetProductAttributeEvent');
 
 $(function() {
-    UiUpdater.getCategories();   
+    UiUpdater.refresh();
     UiUpdater.getBranches(); 
 });
 
@@ -35,7 +31,6 @@ function updateProduct(id, name, price, visible, color, category) {
     if (category != (product.category || '') )
         events.push(new SetProductAttributeEvent(catalog, id, 'category', categoryId));
 
-    console.log(events);
     UiUpdater.processEvents(events);
 }
 
@@ -87,7 +82,7 @@ $('#btnAddBranch').click(() => {
 });
 
 $('select#branchList').on('change', function() {
-    UiUpdater.getCategories();
+    UiUpdater.refresh();
 });
   
 
