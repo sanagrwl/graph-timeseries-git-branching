@@ -39,6 +39,7 @@ class DocumentStoreClient {
 
     static get(collName, query) {   
         return DocumentStoreClient.withCollection(collName, (coll, resolve) => {
+            console.log(`Querying Collection ${collName} - ${JSON.stringify(query)}`);
             coll.find(query).toArray(function(err, docs) {
                 resolve(docs || [])
             });

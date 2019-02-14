@@ -11,6 +11,10 @@ class EventRepository {
     static getEvents(branch) {
         return Client.get(eventCollection, {branch: branch})
     }
+
+    static getEventsBefore(branch, beforeTime) {
+        return Client.get(eventCollection, {branch: branch, created_at: {$lt: beforeTime}})
+    }
 }
 
 module.exports = EventRepository;

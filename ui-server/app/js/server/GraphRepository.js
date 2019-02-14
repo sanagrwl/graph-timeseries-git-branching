@@ -21,8 +21,11 @@ class GraphRepository {
             if (result.records.length == 0) {
                 return {name: branch};
             } else {
-                const stagingBranch = result.records[0].get(0).properties.name;
-                return {name: stagingBranch}
+                const stagingBranch = result.records[0].get(0).properties;
+                stagingBranch.from = parseInt(stagingBranch.from.toString())
+                stagingBranch.to = parseInt(stagingBranch.to.toString())
+            
+                return stagingBranch;
             }            
         });
     }

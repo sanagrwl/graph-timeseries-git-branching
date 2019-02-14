@@ -66,7 +66,15 @@ class Controller {
     }
 
     static getEvents(branch, callback) {
-        return EventRepository.getEvents(branch).then(callback);
+        GraphRepository.getDataBranch(branch)
+        .then((b) => {
+            if (b.name === branch) {
+                return EventRepository.getEvents(branch).then(callback);
+            } else {
+                return EventRepository.getEventsBefore('master', b.from).then(callback);
+            }            
+        })
+        
     }
 
     static applyLiveChanges(branch, callback) {
