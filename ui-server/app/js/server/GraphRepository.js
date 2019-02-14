@@ -62,23 +62,23 @@ class GraphRepository {
         });
     }
 
-    static createCategory(branch, categoryId, name) {
-        console.log(`createCategory: ${branch}`);
+    static createCategory(event) {
+        const branch   = event.branch;
+        const categoryId = event.categoryId;
 
-        const from = new Date().getTime();
         const command = `
         match (branch:branch {name: '${branch}'}), (sn:start {id: 'start'}) 
         create (c:category {id: '${categoryId}'}) 
         create (rn:relation_node {id: (sn.id + "-" + '${categoryId}')}) 
         create (sn)-[:rs]->(rn)-[:re]->(c) 
-        create (branch)-[:update {type: 'ADD', from: ${from}}]->(rn)
+        create (branch)-[:update {type: 'ADD', from: ${now()}}]->(rn)
         `;
 
-        console.log(command)
+        console.log("createCategory", command)
 
         return new Promise((resolve, reject) => {
             session.run(command).then(result => {
-                resolve(result)
+                resolve(event)
             });
         });
     }

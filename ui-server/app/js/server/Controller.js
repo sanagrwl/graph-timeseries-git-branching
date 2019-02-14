@@ -1,5 +1,8 @@
 const EventRepository = require('./EventRepository');
 const GraphRepository = require('./GraphRepository');
+const StateRepository = require('./StateRepository');
+
+const AddCategoryEvent = require('../events/AddCategoryEvent');
 
 class Controller {
     static getCategories(branch, callback) {
@@ -27,7 +30,10 @@ class Controller {
     }
 
     static createCategory(branch, categoryId, name, callback) {
-        GraphRepository.createCategory(branch, categoryId, name).then(() => {
+        const e = new AddCategoryEvent(branch, categoryId, name);
+        GraphRepository.createCategory(e)
+        .then(StateRepository.processEvent)
+        .then(() => {
             callback({})
         })
     }

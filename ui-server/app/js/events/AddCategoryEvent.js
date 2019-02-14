@@ -1,16 +1,17 @@
 const Category = require('../models/Category');
 
 class AddCategoryEvent {
-    constructor(catalog, categoryId, categoryName) {
-        this.catalog = catalog;
-        this.categoryId = categoryId;
-        this.categoryName = categoryName;
+    constructor(branch, categoryId, categoryName) {
         this.name = 'AddCategoryEvent';
-        this.parent = null;
+        this.categoryId = categoryId;
+        this.branch = branch;
+        this.properties = {
+            categoryName: categoryName
+        }
     }
 
     process() {
-        this.catalog.addCategory(new Category(this.categoryId, this.categoryName));
+        // this.catalog.addCategory(new Category(this.categoryId, this.categoryName));
     }
 }
 

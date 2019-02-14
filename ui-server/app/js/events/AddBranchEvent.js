@@ -1,11 +1,11 @@
 const Category = require('../models/Category');
 
 class AddBranchEvent {
-    constructor(catalog, branchName) {
-        this.catalog = catalog;
-        this.branchName = branchName;
+    constructor(branchName) {    
         this.name = 'AddBranchEvent';
-        this.parent = null;
+        this.properties = {
+            branchName: branchName
+        }
     }
 
     process() {
