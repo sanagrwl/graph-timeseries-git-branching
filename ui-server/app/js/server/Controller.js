@@ -66,15 +66,23 @@ class Controller {
     }
 
     static getEvents(branch, callback) {
-        GraphRepository.getDataBranch(branch)
-        .then((b) => {
-            if (b.name === branch) {
-                return EventRepository.getEvents(branch).then(callback);
-            } else {
-                return EventRepository.getEventsBefore('master', b.from).then(callback);
-            }            
-        })
+        const eventsPromise = EventRepository.getEvents(branch);
         
+        const masterEventsPromise = GraphRepository.getDataBranch(branch)
+            .then((b) => {
+                if (b.name === branch) {
+                    return new Promise((res, rej) => res([]));
+                } else {
+                    return EventRepository.getEventsBefore('master', b.from);
+                }            
+            });
+
+        Promise.all([eventsPromise, masterEventsPromise]).then(function(values) {
+            callback({
+                branch: values[0] || [],
+                master: values[1]
+            })
+        });
     }
 
     static applyLiveChanges(branch, callback) {

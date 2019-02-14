@@ -123,8 +123,15 @@ class UiUpdater {
         });
     }
 
-    static updateEvents(events) {
-        const selectedEventId = (!!events && events.length > 0) ? events[0]._id : null
+    static updateEvents(eventsInfo) {
+        const branchEvents = eventsInfo.branch;
+        const masterEvents = eventsInfo.master;
+
+        const events = masterEvents.concat(branchEvents);
+        
+        const selectedEventId = (branchEvents.length > 0 && masterEvents.length > 0) ? 
+            branchEvents[0]._id : 
+            (branchEvents[branchEvents.length - 1] || {})._id;
         UiGraph.update(events, selectedEventId, null, (event, ctrl) => {
             // if (ctrl) {
             //     UiUpdater.secondEventId = event.id;
@@ -292,15 +299,9 @@ class UiUpdater {
     }
 
     static applyLiveChanges() {
-        BranchAPI.applyLiveChanges(() => {
-
+        BranchAPI.applyLiveChanges().then(() => {
+            UiUpdater.refresh();
         });
-        // CatalogAPI.mergeEvents(UiUpdater.eventId, UiUpdater.secondEventId).then((catalog) => {
-        //     window.catalog = catalog;
-        //     UiUpdater.eventId = catalog.eventId || null;
-
-        //     UiUpdater.update(catalog);
-        // });
     }
 }
 
