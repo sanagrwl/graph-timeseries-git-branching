@@ -68,6 +68,12 @@ class Controller {
     static getEvents(branch, callback) {
         return EventRepository.getEvents(branch).then(callback);
     }
+
+    static applyLiveChanges(branch, callback) {
+        return GraphRepository.createStagingBranch(`staging-${branch}`, branch)
+
+        .then(callback);
+    }
 }
 
 

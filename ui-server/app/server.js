@@ -69,4 +69,10 @@ app.post('/branches', function(request, response) {
     })
 });
 
+app.put('/applyLiveChanges', function(request, response) {
+    Controller.applyLiveChanges(branchName(request), () => {
+        response.send({});
+    })
+});
+
 app.listen(80);

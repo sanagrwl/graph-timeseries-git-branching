@@ -6,6 +6,7 @@ const SetProductAttributeEvent = require('./js/events/SetProductAttributeEvent')
 $(function() {
     UiUpdater.refresh();
     UiUpdater.getBranches(); 
+    UiUpdater.toggleApplyLiveChangesButton();
 });
 
 function addProduct(name, price, visible, color, category) {
@@ -68,8 +69,8 @@ $('#deleteEvent').click(() => {
 });
 
 
-$('#mergeEvents').click(() => {
-    UiUpdater.mergeEvents();
+$('#applyLiveChanges').click(() => {
+    UiUpdater.applyLiveChanges();
 });
 
 $('#btnAddBranch').click(() => {
@@ -83,6 +84,7 @@ $('#btnAddBranch').click(() => {
 
 $('select#branchList').on('change', function() {
     UiUpdater.refresh();
+    UiUpdater.toggleApplyLiveChangesButton();
 });
   
 

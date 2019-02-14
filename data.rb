@@ -140,6 +140,7 @@ MATCH (n) DETACH DELETE n;
 
 CREATE CONSTRAINT ON (start:start) ASSERT start.id IS UNIQUE;
 CREATE CONSTRAINT ON (branch:branch) ASSERT branch.name IS UNIQUE;
+CREATE CONSTRAINT ON (branch:staging_branch) ASSERT branch.name IS UNIQUE;
 CREATE CONSTRAINT ON (rn:relation_node) ASSERT rn.id IS UNIQUE;
 CREATE CONSTRAINT ON (c:category) ASSERT c.id IS UNIQUE;
 CREATE CONSTRAINT ON (p:product) ASSERT p.id IS UNIQUE;

@@ -21,18 +21,14 @@ class GraphRepository {
         RETURN c
         `;
 
-        console.log("getCategories", command);
-
-        return new Promise((resolve, reject) => {
-            session.run(command).then(result => {
-                const categories = result.records.map((record) => {
-                    const category_id = record.get(0).properties.id
-                    const name = `Category ${category_id}`
-                    return new Category(null, category_id, name)
-                });
-
-                resolve(categories);
+        return GraphRepository.execCommand("getCategories", command, (result) => {
+            const categories = result.records.map((record) => {
+                const category_id = record.get(0).properties.id
+                const name = `Category ${category_id}`
+                return new Category(null, category_id, name)
             });
+
+            return categories;
         });
     }
 
@@ -46,19 +42,15 @@ class GraphRepository {
         RETURN c
         `;
 
-        console.log("getSubCategories", command);
-
-        return new Promise((resolve, reject) => {
-            session.run(command).then(result => {
-                const categories = result.records.map((record) => {
-                    const cat_id = record.get(0).properties.id
-                    const name = `Category ${cat_id}`
-                    return new Category(parentId, cat_id, name)
-                });
-
-                resolve(categories);
+        return GraphRepository.execCommand("getSubCategories", command, (result) => {
+            const categories = result.records.map((record) => {
+                const cat_id = record.get(0).properties.id
+                const name = `Category ${cat_id}`
+                return new Category(parentId, cat_id, name)
             });
-        });
+
+            return categories;
+        })
     }
 
     static createCategory(event) {
@@ -73,13 +65,7 @@ class GraphRepository {
         create (branch)-[:update {type: 'ADD', from: ${now()}}]->(rn)
         `;
 
-        console.log("createCategory", command)
-
-        return new Promise((resolve, reject) => {
-            session.run(command).then(result => {
-                resolve(result)
-            });
-        });
+        return GraphRepository.execCommand("createCategory", command);
     }
 
     static getProducts(branch, categoryId) {
@@ -92,25 +78,21 @@ class GraphRepository {
         RETURN p
         `;
 
-        return new Promise((resolve, reject) => {
-            session.run(command).then(result => {
-                const products = result.records.map((record) => {
-                    const product_id = record.get(0).properties.id
-                    const name = `Product ${product_id}`
-                    return new Product(product_id, name)
-                });
-
-                resolve(products);
+        return GraphRepository.execCommand('getProducts', command, (result) => {
+            const products = result.records.map((record) => {
+                const product_id = record.get(0).properties.id
+                const name = `Product ${product_id}`
+                return new Product(product_id, name)
             });
-        });
 
-        console.log("getProducts", command)
+            return products;
+        });
     }
 
     static deleteProduct(removeProductEvent) {
         const branch = removeProductEvent.branch;
         const productId = removeProductEvent.productId;
-        
+
         const command = `
         MATCH (branch:branch {name:"${branch}"})-[:update]->(rn:relation_node)-[:re]->(c:product {id:"${productId}"}) 
         WITH branch, COLLECT(DISTINCT rn) AS rns 
@@ -119,13 +101,7 @@ class GraphRepository {
         )
         `;
 
-        console.log('deleteProduct', command);
-
-        return new Promise((resolve, reject) => {
-            session.run(command).then(result => {
-                resolve({});
-            });
-        });
+        return GraphRepository.execCommand('deleteProduct', command);
     }
 
     static deleteCategory(removeCategoryEvent) {
@@ -140,13 +116,7 @@ class GraphRepository {
         )
         `;
 
-        console.log('deleteCategory', command);
-
-        return new Promise((resolve, reject) => {
-            session.run(command).then(result => {
-                resolve();
-            });
-        });
+        return GraphRepository.execCommand('deleteCategory', command);
     }
 
     static createBranch(branch) {
@@ -163,23 +133,43 @@ class GraphRepository {
         )
         `;
 
-        console.log('createBranch', command);
-        return new Promise((resolve, reject) => {
-            session.run(command).then(result => {
-                resolve(result)
-            });
+        return GraphRepository.execCommand('createBranch', command);
+    }
+
+    static associateStagingBranch(stagingBranchName, branch) {
+        const command = `
+        match (b:branch {name: '${branch}'}), (sb:branch {name: '${stagingBranchName}'})
+        create (b)-[:staging]->(sb)
+        `;
+
+        return GraphRepository.execCommand("associateStagingBranch", command);
+    }
+
+    static createStagingBranch(stagingBranchName, branch) {
+        return GraphRepository.createBranch(stagingBranchName).then(() => {
+            return GraphRepository.associateStagingBranch(stagingBranchName, branch);
         });
     }
 
     static getBranches() {
         const command = `match (b:branch) return b`;
-        return new Promise((resolve, reject) => {
-            session.run(command).then(result => {
-                const branches = result.records.map((record) => {
-                    return {name: record.get(0).properties.name}
-                });
+        return GraphRepository.execCommand("getBranches", command, (result) => {
+            const branches = result.records.map((record) => {
+                return {name: record.get(0).properties.name}
+            });
 
-                resolve(branches)
+            return branches;
+        })
+    }
+
+    static execCommand(logId, command, cb) {
+        const identity = (result) => result;
+
+        return new Promise((resolve, reject) => {
+            const callback = cb || identity;
+            console.log(logId, command)
+            session.run(command).then(result => {                
+                resolve(callback(result))
             });
         });
     }

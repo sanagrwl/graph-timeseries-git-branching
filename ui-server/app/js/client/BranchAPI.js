@@ -41,7 +41,22 @@ class BranchAPI {
                 resolve(events);
             });
         });
-    };
+    }
+
+    static applyLiveChanges() {
+        return new Promise((resolve, reject) => {
+            const payload = {
+                method: 'put',
+                headers: defaultHeaders()
+            };
+
+            fetch(url + '/applyLiveChanges', payload).then(function (response) {
+                return response.json();
+            }).then(function () {
+                resolve();
+            });
+        });
+    }
 }
 
 module.exports = BranchAPI;

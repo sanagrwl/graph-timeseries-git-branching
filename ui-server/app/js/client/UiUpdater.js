@@ -126,39 +126,39 @@ class UiUpdater {
     static updateEvents(events) {
         const selectedEventId = (!!events && events.length > 0) ? events[0]._id : null
         UiGraph.update(events, selectedEventId, null, (event, ctrl) => {
-            if (ctrl) {
-                UiUpdater.secondEventId = event.id;
-                $('#mergeEvents').prop("disabled",false);
-            } else {
-                $('#mergeEvents').prop("disabled",true);
-                UiUpdater.setCatalog(event.id);
-            }
+            // if (ctrl) {
+            //     UiUpdater.secondEventId = event.id;
+            //     $('#mergeEvents').prop("disabled",false);
+            // } else {
+            //     $('#mergeEvents').prop("disabled",true);
+            //     UiUpdater.setCatalog(event.id);
+            // }
         });
     }
 
     static update(catalog) {
-        UiUpdater.updateCategoryTable(catalog.categories);
-        UiUpdater.updateProductTable(catalog);
+        // UiUpdater.updateCategoryTable(catalog.categories);
+        // UiUpdater.updateProductTable(catalog);
 
-        const categoriesSelect = $('#productCategory');
+        // const categoriesSelect = $('#productCategory');
 
-        categoriesSelect.empty();
-        catalog.categories.forEach((category) => {
-            categoriesSelect.append($('<option></option>').val(category.id).html(category.name));
-        });
-        categoriesSelect.val('');
+        // categoriesSelect.empty();
+        // catalog.categories.forEach((category) => {
+        //     categoriesSelect.append($('<option></option>').val(category.id).html(category.name));
+        // });
+        // categoriesSelect.val('');
 
-        CatalogAPI.getAllCatalogEvents(catalog.id).then((events) => {
-            UiGraph.update(events, catalog.eventId, null, (event, ctrl) => {
-                if (ctrl) {
-                    UiUpdater.secondEventId = event.id;
-                    $('#mergeEvents').prop("disabled",false);
-                } else {
-                    $('#mergeEvents').prop("disabled",true);
-                    UiUpdater.setCatalog(event.id);
-                }
-            });
-        });
+        // CatalogAPI.getAllCatalogEvents(catalog.id).then((events) => {
+        //     UiGraph.update(events, catalog.eventId, null, (event, ctrl) => {
+        //         if (ctrl) {
+        //             UiUpdater.secondEventId = event.id;
+        //             $('#mergeEvents').prop("disabled",false);
+        //         } else {
+        //             $('#mergeEvents').prop("disabled",true);
+        //             UiUpdater.setCatalog(event.id);
+        //         }
+        //     });
+        // });
     }
 
     static openUpdateForm(product) {
@@ -190,7 +190,14 @@ class UiUpdater {
         UiUpdater.getCategories();   
         UiUpdater.getEvents();
     }
-    
+
+    static toggleApplyLiveChangesButton() {
+        if ($("#branchList").val() === 'master') {
+            $('#applyLiveChanges').prop("disabled", true);
+        } else {
+            $('#applyLiveChanges').prop("disabled", false);
+        }    
+    }
 
     static setCatalog(eventId) {
         UiUpdater.eventId = eventId;
@@ -283,13 +290,16 @@ class UiUpdater {
         });
     }
 
-    static mergeEvents() {
-        CatalogAPI.mergeEvents(UiUpdater.eventId, UiUpdater.secondEventId).then((catalog) => {
-            window.catalog = catalog;
-            UiUpdater.eventId = catalog.eventId || null;
-
-            UiUpdater.update(catalog);
+    static applyLiveChanges() {
+        BranchAPI.applyLiveChanges(() => {
+            
         });
+        // CatalogAPI.mergeEvents(UiUpdater.eventId, UiUpdater.secondEventId).then((catalog) => {
+        //     window.catalog = catalog;
+        //     UiUpdater.eventId = catalog.eventId || null;
+
+        //     UiUpdater.update(catalog);
+        // });
     }
 }
 
