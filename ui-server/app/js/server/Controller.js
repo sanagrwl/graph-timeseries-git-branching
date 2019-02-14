@@ -3,6 +3,8 @@ const GraphRepository = require('./GraphRepository');
 const StateRepository = require('./StateRepository');
 
 const AddCategoryEvent = require('../events/AddCategoryEvent');
+const RemoveCategoryEvent = require('../events/RemoveCategoryEvent');
+const RemoveProductEvent = require('../events/RemoveProductEvent');
 
 class Controller {
     static getCategories(branch, callback) {
@@ -24,7 +26,10 @@ class Controller {
     }
 
     static deleteProduct(branch, productId, callback) {
-        GraphRepository.deleteProduct(branch, productId).then(() => {
+        const e = new RemoveProductEvent(branch, productId)
+        GraphRepository.deleteProduct(e)
+        .then((_) => EventRepository.addEvent(e))
+        .then(() => {
             callback()
         })
     }
@@ -33,14 +38,17 @@ class Controller {
         const e = new AddCategoryEvent(branch, categoryId, name);
         GraphRepository.createCategory(e)
         .then((_) => StateRepository.processEvent(e))
-        .then((_) => EventRepository.processEvent(e))
+        .then((_) => EventRepository.addEvent(e))
         .then(() => {
             callback({})
         })
     }
 
     static deleteCategory(branch, categoryId, callback) {
-        GraphRepository.deleteCategory(branch, categoryId).then(() => {
+        const e = new RemoveCategoryEvent(branch, categoryId);
+        GraphRepository.deleteCategory(e)
+        .then((_) => EventRepository.addEvent(e))
+        .then(() => {
             callback({})
         })
     }

@@ -107,7 +107,10 @@ class GraphRepository {
         console.log("getProducts", command)
     }
 
-    static deleteProduct(branch, productId) {
+    static deleteProduct(removeProductEvent) {
+        const branch = removeProductEvent.branch;
+        const productId = removeProductEvent.productId;
+        
         const command = `
         MATCH (branch:branch {name:"${branch}"})-[:update]->(rn:relation_node)-[:re]->(c:product {id:"${productId}"}) 
         WITH branch, COLLECT(DISTINCT rn) AS rns 
@@ -125,7 +128,10 @@ class GraphRepository {
         });
     }
 
-    static deleteCategory(branch, categoryId) {
+    static deleteCategory(removeCategoryEvent) {
+        const branch = removeCategoryEvent.branch;
+        const categoryId = removeCategoryEvent.categoryId;
+
         const command = `
         MATCH (branch:branch {name:"${branch}"})-[:update]->(rn:relation_node)-[:rs|re]-(c:category {id:"${categoryId}"})
             WITH branch, COLLECT(DISTINCT rn) AS rns

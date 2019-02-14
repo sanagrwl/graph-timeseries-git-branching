@@ -230,6 +230,7 @@ class UiUpdater {
     static createBranch(name) {
         BranchAPI.createBranch(name).then((data) => {
             UiUpdater.getBranches();
+            UiUpdater.getEvents();
         });
     }
 
@@ -250,12 +251,14 @@ class UiUpdater {
     static removeProduct(categoryId, productId) {
         CategoryAPI.deleteProduct(productId).then((result) => {
             UiUpdater.getProducts(categoryId);
+            UiUpdater.getEvents();
         });
     }
 
     static deleteCategory(parentId, categoryId) {
         CategoryAPI.deleteCategory(categoryId).then((result) => {
             !!parentId ? UiUpdater.getSubCategories(parentId) : UiUpdater.getCategories();
+            UiUpdater.getEvents();
         });
     }
 
