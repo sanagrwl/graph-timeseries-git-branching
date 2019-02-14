@@ -11,45 +11,72 @@ const now = () => new Date().getTime();
 
 class GraphRepository {
 
-    static getCategories(branch) {
-        const command = `
-        MATCH (branch:branch {name:'${branch}'})-[u:update]->(rn:relation_node)<-[:rs]-(start:start {id: 'start'}) 
-        WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC 
-        WITH rn,HEAD(COLLECT(utype)) AS lastut 
-        WHERE lastut="ADD" 
-        MATCH (start)-[:rs]->(rn)-[:re]->(c:category) 
-        RETURN c
+    static getDataBranch(branch) {
+        const command  = `
+        match (:branch {name: '${branch}'})-[:staging]->(sb:branch)
+        return sb
         `;
 
-        return GraphRepository.execCommand("getCategories", command, (result) => {
-            const categories = result.records.map((record) => {
-                const category_id = record.get(0).properties.id
-                const name = `Category ${category_id}`
-                return new Category(null, category_id, name)
-            });
-
-            return categories;
+        return GraphRepository.execCommand("getStagingBranch", command, (result) => {
+            if (result.records.length == 0) {
+                return {name: branch};
+            } else {
+                const stagingBranch = result.records[0].get(0).properties.name;
+                return {name: stagingBranch}
+            }            
         });
     }
 
-    static getSubCategories(branch, parentId) {
-        const command = `
-        MATCH (branch:branch {name:'${branch}'})-[u:update]->(rn:relation_node)<-[:rs]-(c:category {id: '${parentId}'})
-        WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC
-        WITH rn,HEAD(COLLECT(utype)) AS lastut
-        WHERE lastut="ADD"
-        MATCH (rn)-[:re]->(c:category)
-        RETURN c
-        `;
+    static getCategories(branch) {
+        const command = (branchName) => { 
+            return `
+                MATCH (branch:branch {name:'${branchName}'})-[u:update]->(rn:relation_node)<-[:rs]-(start:start {id: 'start'}) 
+                WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC 
+                WITH rn,HEAD(COLLECT(utype)) AS lastut 
+                WHERE lastut="ADD" 
+                MATCH (start)-[:rs]->(rn)-[:re]->(c:category) 
+                RETURN c
+            `;
+        }
 
-        return GraphRepository.execCommand("getSubCategories", command, (result) => {
-            const categories = result.records.map((record) => {
-                const cat_id = record.get(0).properties.id
-                const name = `Category ${cat_id}`
-                return new Category(parentId, cat_id, name)
+        return GraphRepository.getDataBranch(branch)
+        .then((b) => {
+            return GraphRepository.execCommand("getCategories", command(b.name), (result) => {
+                const categories = result.records.map((record) => {
+                    const category_id = record.get(0).properties.id
+                    const name = `Category ${category_id}`
+                    return new Category(null, category_id, name)
+                });
+    
+                return categories;
             });
+        })
+        
+    }
 
-            return categories;
+    static getSubCategories(branch, parentId) {
+        const command = (b) => {
+            return `
+                MATCH (branch:branch {name:'${b.name}'})-[u:update]->(rn:relation_node)<-[:rs]-(c:category {id: '${parentId}'})
+                WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC
+                WITH rn,HEAD(COLLECT(utype)) AS lastut
+                WHERE lastut="ADD"
+                MATCH (rn)-[:re]->(c:category)
+                RETURN c
+            `;
+        };
+
+        return GraphRepository.getDataBranch(branch)
+        .then((b) => {
+            return GraphRepository.execCommand("getSubCategories", command(b), (result) => {
+                const categories = result.records.map((record) => {
+                    const cat_id = record.get(0).properties.id
+                    const name = `Category ${cat_id}`
+                    return new Category(parentId, cat_id, name)
+                });
+    
+                return categories;
+            })
         })
     }
 
@@ -69,16 +96,20 @@ class GraphRepository {
     }
 
     static getProducts(branch, categoryId) {
-        const command = `
-        MATCH (branch:branch {name:"${branch}"})-[u:update]->(rn:relation_node)<-[:rs]-(c:category {id: '${categoryId}'}) 
-        WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC 
-        WITH rn,HEAD(COLLECT(utype)) AS lastut 
-        WHERE lastut="ADD" 
-        MATCH (c)-[:rs]->(rn)-[:re]->(p:product) 
-        RETURN p
-        `;
+        const command = (b) => {
+            return `
+            MATCH (branch:branch {name:"${b.name}"})-[u:update]->(rn:relation_node)<-[:rs]-(c:category {id: '${categoryId}'}) 
+            WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC 
+            WITH rn,HEAD(COLLECT(utype)) AS lastut 
+            WHERE lastut="ADD" 
+            MATCH (c)-[:rs]->(rn)-[:re]->(p:product) 
+            RETURN p
+            `;
+        }
 
-        return GraphRepository.execCommand('getProducts', command, (result) => {
+        return GraphRepository.getDataBranch(branch)
+        .then((b) => {
+            return GraphRepository.execCommand('getProducts', command(b), (result) => {
             const products = result.records.map((record) => {
                 const product_id = record.get(0).properties.id
                 const name = `Product ${product_id}`
@@ -86,6 +117,7 @@ class GraphRepository {
             });
 
             return products;
+            });
         });
     }
 
@@ -152,7 +184,7 @@ class GraphRepository {
     }
 
     static getBranches() {
-        const command = `match (b:branch) return b`;
+        const command = `match (b:branch) where not (b)<-[:staging]-(:branch) return b`;
         return GraphRepository.execCommand("getBranches", command, (result) => {
             const branches = result.records.map((record) => {
                 return {name: record.get(0).properties.name}

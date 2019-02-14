@@ -192,7 +192,8 @@ class UiUpdater {
     }
 
     static toggleApplyLiveChangesButton() {
-        if ($("#branchList").val() === 'master') {
+        const selectedBranch = $("#branchList").val();
+        if (!selectedBranch || selectedBranch === 'master') {
             $('#applyLiveChanges').prop("disabled", true);
         } else {
             $('#applyLiveChanges').prop("disabled", false);
@@ -292,7 +293,7 @@ class UiUpdater {
 
     static applyLiveChanges() {
         BranchAPI.applyLiveChanges(() => {
-            
+
         });
         // CatalogAPI.mergeEvents(UiUpdater.eventId, UiUpdater.secondEventId).then((catalog) => {
         //     window.catalog = catalog;
