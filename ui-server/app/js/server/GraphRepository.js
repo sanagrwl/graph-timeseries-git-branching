@@ -197,10 +197,12 @@ class GraphRepository {
         })
     }
 
-    static getCategoryTree(branch, categoryId) {
+    static getCategoryTree(branch, categoryId, beforeTime) {
+        const t = beforeTime || endOfTime;
         const command = `
         match (:start)-[*]->(rn)-[*]->(:category {id: '${categoryId}'}),
         (rn)<-[u:update]-(:branch {name: '${branch}'})
+        Where u.from < ${t}
         WITH rn, u.type AS utype ORDER BY rn.id, u.from DESC
         with rn, head(collect(utype)) as last_update
         where last_update = 'ADD'

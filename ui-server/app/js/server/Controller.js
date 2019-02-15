@@ -100,13 +100,13 @@ class Controller {
 
         Controller.validateBranchData(branch, event);
 
-        const branchTreePromise = GraphRepository.getCategoryTree(event.branch, event.categoryId);
+        const branchTreePromise = GraphRepository.getCategoryTree(event.branch, event.categoryId, event.created_at);
         const masterTreePromise = GraphRepository.getCategoryTree("master", event.categoryId);
 
         Promise.all([branchTreePromise, masterTreePromise]).then(function(values) {
             if (Controller.array_diff(values[0], values[1]).length > 0) {
                 callback ({
-                    message: `Master Ids: ${values[1]}, Branch Ids: ${values[0]}`,
+                    message: `Master Ids: ${values[1].join(" ")}, Branch Ids: ${values[0].toString()}`,
                     error: {
                         master: values[1],
                         branch: values[0]
