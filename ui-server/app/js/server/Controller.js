@@ -87,9 +87,72 @@ class Controller {
 
     static applyLiveChanges(branch, callback) {
         return GraphRepository.createStagingBranch(`staging-${branch}`, branch)
-
         .then(callback);
     }
+
+    //event {_id: "5c66d9e79dd0f7cba165d2ba", 
+        // name: "RemoveCategoryEvent", 
+        // created_at: 1550244327265, 
+        // branch: "master", 
+        // categoryId: "2"}
+    static applyEvent(branch, event, callback) {
+        console.log("applyingEvent", branch, JSON.stringify(event));
+
+        Controller.validateBranchData(branch, event);
+
+        const branchTreePromise = GraphRepository.getCategoryTree(event.branch, event.categoryId);
+        const masterTreePromise = GraphRepository.getCategoryTree("master", event.categoryId);
+
+        Promise.all([branchTreePromise, masterTreePromise]).then(function(values) {
+            if (Controller.array_diff(values[0], values[1]).length > 0) {
+                callback ({
+                    message: `Master Ids: ${values[1]}, Branch Ids: ${values[0]}`,
+                    error: {
+                        master: values[1],
+                        branch: values[0]
+                    }
+                })
+            } else {
+                callback({
+                    message: "no structural difference"
+                })
+            }
+        });
+    }
+
+    static validateBranchData(branch, event) {
+        if (branch !== event.branch && branch === 'master') {
+            throw Error (`
+            Branch is not a draft one. 
+            Supplied branches: [${branch}], event branch: [${event.branch}]
+            `);
+        }
+    }
+
+    static array_diff (a1, a2) {
+
+        var a = [], diff = [];
+    
+        for (var i = 0; i < a1.length; i++) {
+            a[a1[i]] = true;
+        }
+    
+        for (var i = 0; i < a2.length; i++) {
+            if (a[a2[i]]) {
+                delete a[a2[i]];
+            } else {
+                a[a2[i]] = true;
+            }
+        }
+    
+        for (var k in a) {
+            diff.push(k);
+        }
+    
+        return diff;
+    }
+
+
 }
 
 

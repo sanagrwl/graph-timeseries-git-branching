@@ -197,6 +197,28 @@ class GraphRepository {
         })
     }
 
+    static getCategoryTree(branch, categoryId) {
+        const command = `
+        match (:start)-[*]->(rn)-[*]->(:category {id: '${categoryId}'}),
+        (rn)<-[u:update]-(:branch {name: '${branch}'})
+        WITH rn, u.type AS utype ORDER BY rn.id, u.from DESC
+        with rn, head(collect(utype)) as last_update
+        where last_update = 'ADD'
+        match p = (:start)-[*]->(rn)-[*]->(:category {id: '${categoryId}'})
+        with distinct nodes(p) as nodes
+        unwind filter(n IN nodes WHERE head(labels(n)) = "category") as n
+        return n.id`;
+
+        return GraphRepository.execCommand("getCategoryTree", command, (result) => {
+            const ids = result.records.map((record) => {
+                return record.get(0);
+            });
+
+            console.log(ids);
+            return ids;
+        })
+    }
+
     static execCommand(logId, command, cb) {
         const identity = (result) => result;
 

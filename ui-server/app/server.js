@@ -66,13 +66,20 @@ app.get('/branches', function(request, response) {
 app.post('/branches', function(request, response) {
     Controller.createBranch(request.body.name, (payload) => {
         response.send(payload);
-    })
+    });
 });
 
 app.put('/applyLiveChanges', function(request, response) {
     Controller.applyLiveChanges(branchName(request), () => {
         response.send({});
-    })
+    });
+});
+
+app.put('/events/apply', function(request, response) {
+    const event = request.body.event;
+    Controller.applyEvent(branchName(request), event, (payload) => {
+        response.send(payload);
+    });
 });
 
 app.listen(80);

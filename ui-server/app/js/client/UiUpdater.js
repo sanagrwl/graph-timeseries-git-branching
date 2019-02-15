@@ -123,6 +123,16 @@ class UiUpdater {
         });
     }
 
+    static showGlobalMessage(message) {
+        $("#globalMessage").text(message);
+        $("#globalMessage").show();        
+    }
+
+    static hideGlobalMessage() {
+        $("#globalMessage").hide();
+        $("#globalMessage").text("");
+    }
+
     static updateEvents(eventsInfo) {
         const branchEvents = eventsInfo.branch;
         const masterEvents = eventsInfo.master;
@@ -130,9 +140,13 @@ class UiUpdater {
         const events = masterEvents.concat(branchEvents);
         
         const selectedEventId = (branchEvents.length > 0 && masterEvents.length > 0) ? 
-            branchEvents[0]._id : 
-            (branchEvents[branchEvents.length - 1] || {})._id;
+            masterEvents.slice(-1).pop()._id : 
+            (branchEvents.slice(-1).pop() || {})._id;
         UiGraph.update(events, selectedEventId, null, (event, ctrl) => {
+            console.log(event);
+            UiUpdater.hideGlobalMessage();
+            UiUpdater.applyEvent(event);
+            
             // if (ctrl) {
             //     UiUpdater.secondEventId = event.id;
             //     $('#mergeEvents').prop("disabled",false);
@@ -143,29 +157,15 @@ class UiUpdater {
         });
     }
 
+    static applyEvent(event) {
+        BranchAPI.applyEvent(event).then((resp) => {
+            UiUpdater.refresh();
+            console.log(resp);
+            UiUpdater.showGlobalMessage(resp.message);
+        })
+    }
+
     static update(catalog) {
-        // UiUpdater.updateCategoryTable(catalog.categories);
-        // UiUpdater.updateProductTable(catalog);
-
-        // const categoriesSelect = $('#productCategory');
-
-        // categoriesSelect.empty();
-        // catalog.categories.forEach((category) => {
-        //     categoriesSelect.append($('<option></option>').val(category.id).html(category.name));
-        // });
-        // categoriesSelect.val('');
-
-        // CatalogAPI.getAllCatalogEvents(catalog.id).then((events) => {
-        //     UiGraph.update(events, catalog.eventId, null, (event, ctrl) => {
-        //         if (ctrl) {
-        //             UiUpdater.secondEventId = event.id;
-        //             $('#mergeEvents').prop("disabled",false);
-        //         } else {
-        //             $('#mergeEvents').prop("disabled",true);
-        //             UiUpdater.setCatalog(event.id);
-        //         }
-        //     });
-        // });
     }
 
     static openUpdateForm(product) {

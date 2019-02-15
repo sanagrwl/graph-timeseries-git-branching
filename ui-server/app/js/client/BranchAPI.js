@@ -57,6 +57,27 @@ class BranchAPI {
             });
         });
     }
+
+    static applyEvent(event) {
+        // {_id: "5c66d9e79dd0f7cba165d2ba", 
+        // name: "RemoveCategoryEvent", 
+        // created_at: 1550244327265, 
+        // branch: "master", 
+        // categoryId: "2"}
+        return new Promise((resolve, reject) => {
+            const payload = {
+                method: 'put',
+                headers: defaultHeaders(),
+                body: JSON.stringify({event: event})
+            };
+
+            fetch(url + '/events/apply', payload).then(function (response) {
+                return response.json();
+            }).then(function (body) {
+                resolve(body);
+            });
+        });
+    }
 }
 
 module.exports = BranchAPI;
