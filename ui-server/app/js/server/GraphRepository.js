@@ -36,11 +36,10 @@ class GraphRepository {
                 MATCH (start:start {id: 'start'})-[u:update]->(c:category),
                 (b:branch {name: '${branchName}'})
                 where b.name in ['master', '${branchName}'] 
-                    and ((u.branch = 'master' and u.from < b.from)
-                        or (u.branch = '${branchName}'))
-                WITH c, u.type AS utype ORDER BY u.from DESC 
-                WITH c,HEAD(COLLECT(utype)) AS lastut 
-                WHERE lastut="ADD" 
+                    and ((u.branch = '${branchName}') or (u.branch = 'master' and u.from < b.from and u.to > b.from))
+                WITH c, u AS rels ORDER BY u.from DESC 
+                WITH c,HEAD(COLLECT(rels)) as latestRel
+                where latestRel.to = ${endOfTime}
                 return c
             `;
         }
@@ -91,11 +90,10 @@ class GraphRepository {
         const categoryId = event.categoryId;
 
         const command = `
-        match (branch:branch {name: '${branch}'}), (sn:start {id: 'start'}) 
+        match (sn:start {id: 'start'}) 
+        with sn
         create (c:category {id: '${categoryId}'}) 
-        create (rn:relation_node {id: (sn.id + "-" + '${categoryId}')}) 
-        create (sn)-[:rs]->(rn)-[:re]->(c) 
-        create (branch)-[:update {type: 'ADD', from: ${now()}}]->(rn)
+        create (sn)-[:update {branch:'${branch}', from: ${now()}, to: ${endOfTime}}]->(c) 
         `;
 
         return GraphRepository.execCommand("createCategory", command);
@@ -147,15 +145,16 @@ class GraphRepository {
         const categoryId = removeCategoryEvent.categoryId;
 
         const command = `
-        MATCH (c:category {id:"${categoryId}"})<-[u:update]-(n),
-(b:branch {name: '${branch}'})
-where u.branch in ['master', '${branch}']
-and ((u.branch = 'master' and u.from < b.from)
-or (u.branch = '${branch}'))
-WITH n, c, u ORDER BY u.from DESC 
-WITH n,c,HEAD(COLLECT(u)) AS lastut 
-WHERE lastut.type="ADD" 
-create (c)<-[:update {type:"DELETE", branch: '${branch}', from: ${now()}}]-(n)
+        MATCH (c:category {id:"${categoryId}"})<-[u:update {branch: 'master'}]-(n), (branch:branch {name: '${branch}'})
+        optional match (c)<-[bu:update {branch: '${branch}', to: ${endOfTime}}]-(bn)
+        where u.from < branch.from and u.to > branch.from
+        with c,n,bu
+        FOREACH(ignoreMe IN CASE WHEN bu is null THEN [1] ELSE [] END | 
+	        create (c)<-[rel:update {branch: '${branch}', from: ${now()}, to: ${now()}}]-(n)
+		)
+	  FOREACH(ignoreMe IN CASE WHEN bu is not null THEN [1] ELSE [] END | 
+			 set bu.to = ${now()}
+		)
         `;
 
         return GraphRepository.execCommand('deleteCategory', command);
