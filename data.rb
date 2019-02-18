@@ -101,10 +101,10 @@ $top_categories_relations_file = "top-categories-relations.csv"
 $products_file = "products.csv"
 $products_relations_file = "products-relations.csv"
 
-top_categories_count = 10
-sub_categories_per_category = 3
+top_categories_count = 30
+sub_categories_per_category = 4
 category_levels = 5
-products_per_leaf_category = 4
+products_per_leaf_category = 250
 
 total_categories_under_one_root = (0...category_levels).reduce(0) {|r, v| r + sub_categories_per_category ** v} 
 total_categories = top_categories_count * total_categories_under_one_root
@@ -114,7 +114,8 @@ result = create_all_categories_relationships(top_categories_count, sub_categorie
 
 total_products = create_products(result[:leaf_ids],products_per_leaf_category)
 
-
+puts "total categories = #{total_categories}"
+puts "total products = #{products_per_leaf_category * total_categories}"
 
 def bold(message)
     "\e[1m#{message}\e[0m"
@@ -148,32 +149,31 @@ CREATE CONSTRAINT ON (p:product) ASSERT p.id IS UNIQUE;
 create (s:start {id: "start"});
 create (b:branch {name: 'master', from: 0, to: 2148530400000});
 
+USING PERIODIC COMMIT 1000
 LOAD CSV FROM "file:///#{$categories_file}" AS line
 create (c:category {id: line[0]});
 
+USING PERIODIC COMMIT 1000
 LOAD CSV FROM "file:///#{$categories_relations_file}" AS line
-match (a:category), (b:category), (branch:branch)
-where a.id = line[0] and b.id = line[1] and branch.name = 'master'
-create (rn:relation_node {id: ("cat" + "-" + line[0] + '-' + line[1])})
-create (a)-[:rs]->(rn)-[:re]->(b)
-create (branch)-[:update {type: 'ADD', from: toInt(line[3])}]->(rn);
+match (a:category), (b:category)
+where a.id = line[0] and b.id = line[1]
+create (a)-[:update {type: 'ADD', branch: 'master', from: toInt(line[3])}]->(b);
 
+USING PERIODIC COMMIT 1000
 LOAD CSV FROM "file:///#{$top_categories_relations_file}" AS line
-match (a:start {id: "start"}), (b:category), (branch:branch {name: 'master'})
+match (a:start {id: "start"}), (b:category)
 where b.id = line[0]
-create (rn:relation_node {id: (a.id + '-' + b.id)})
-create (a)-[:rs]->(rn)-[:re]->(b)
-create (branch)-[:update {type: 'ADD', from: toInt(line[2])}]->(rn);
+create (a)-[:update {type: 'ADD', branch: 'master', from: toInt(line[2])}]->(b);
 
+USING PERIODIC COMMIT 1000
 LOAD CSV FROM "file:///#{$products_file}" AS line
 create (p:product {id: line[0]});
 
+USING PERIODIC COMMIT 1000
 LOAD CSV FROM "file:///#{$products_relations_file}" AS line
-match (a:category), (b:product), (branch:branch)
-where a.id = line[0] and b.id = line[1] and branch.name = 'master'
-create (rn:relation_node {id: ("product" + "-" + line[0] + '-' + line[1])})
-create (a)-[:rs]->(rn)-[:re]->(b)
-create (branch)-[:update {type: 'ADD', from: toInt(line[3])}]->(rn);
+match (a:category), (b:product)
+where a.id = line[0] and b.id = line[1]
+create (a)-[:update {type: 'ADD', branch: 'master', from: toInt(line[3])}]->(b);
 
 
 #{bold("Start app:")} (inside ui-server directory)

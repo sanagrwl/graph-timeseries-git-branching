@@ -33,12 +33,15 @@ class GraphRepository {
     static getCategories(branch) {
         const command = (branchName) => { 
             return `
-                MATCH (branch:branch {name:'${branchName}'})-[u:update]->(rn:relation_node)<-[:rs]-(start:start {id: 'start'}) 
-                WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC 
-                WITH rn,HEAD(COLLECT(utype)) AS lastut 
+                MATCH (start:start {id: 'start'})-[u:update]->(c:category),
+                (b:branch {name: '${branchName}'})
+                where b.name in ['master', '${branchName}'] 
+                    and ((u.branch = 'master' and u.from < b.from)
+                        or (u.branch = '${branchName}'))
+                WITH c, u.type AS utype ORDER BY u.from DESC 
+                WITH c,HEAD(COLLECT(utype)) AS lastut 
                 WHERE lastut="ADD" 
-                MATCH (start)-[:rs]->(rn)-[:re]->(c:category) 
-                RETURN c
+                return c
             `;
         }
 
@@ -144,11 +147,15 @@ class GraphRepository {
         const categoryId = removeCategoryEvent.categoryId;
 
         const command = `
-        MATCH (branch:branch {name:"${branch}"})-[:update]->(rn:relation_node)-[:rs|re]-(c:category {id:"${categoryId}"})
-            WITH branch, COLLECT(DISTINCT rn) AS rns
-        FOREACH ( relation_node IN rns |
-            CREATE (branch)-[:update {type:"REMOVE", from: ${now()}}]->(relation_node)
-        )
+        MATCH (c:category {id:"${categoryId}"})<-[u:update]-(n),
+(b:branch {name: '${branch}'})
+where u.branch in ['master', '${branch}']
+and ((u.branch = 'master' and u.from < b.from)
+or (u.branch = '${branch}'))
+WITH n, c, u ORDER BY u.from DESC 
+WITH n,c,HEAD(COLLECT(u)) AS lastut 
+WHERE lastut.type="ADD" 
+create (c)<-[:update {type:"DELETE", branch: '${branch}', from: ${now()}}]-(n)
         `;
 
         return GraphRepository.execCommand('deleteCategory', command);
@@ -157,15 +164,7 @@ class GraphRepository {
     static createBranch(branch) {
         const command = `
         create (branch:branch {name: '${branch}', from: ${now()}, to: ${endOfTime}}) 
-        with branch 
-        MATCH (:branch {name:"master"})-[u:update]->(rn:relation_node) 
-        WITH branch, rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC 
-        WITH branch, rn,HEAD(COLLECT(utype)) AS lastut 
-        WHERE lastut="ADD" 
-        WITH branch, rn, COLLECT(DISTINCT rn) as rns 
-        FOREACH (relation_node IN rns | 
-            CREATE (branch)-[:update {type:"ADD", from: ${now()}}]->(relation_node) 
-        )
+        return branch
         `;
 
         return GraphRepository.execCommand('createBranch', command);
