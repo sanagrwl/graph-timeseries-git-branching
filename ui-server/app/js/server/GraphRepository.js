@@ -37,9 +37,9 @@ class GraphRepository {
                 (b:branch {name: '${branchName}'})
                 where b.name in ['master', '${branchName}'] 
                     and ((u.branch = '${branchName}') or (u.branch = 'master' and u.from < b.from and u.to > b.from))
-                WITH c, u AS rels ORDER BY u.from DESC 
-                WITH c,HEAD(COLLECT(rels)) as latestRel
-                where latestRel.to = ${endOfTime}
+                WITH b, c, u AS rels ORDER BY u.from DESC 
+                WITH b, c,HEAD(COLLECT(rels)) as latestRel
+                where latestRel.to = ${endOfTime} or (latestRel.to > b.from and latestRel.branch <> '${branchName}')
                 return c
             `;
         }
@@ -62,12 +62,13 @@ class GraphRepository {
     static getSubCategories(branch, parentId) {
         const command = (b) => {
             return `
-                MATCH (branch:branch {name:'${b.name}'})-[u:update]->(rn:relation_node)<-[:rs]-(c:category {id: '${parentId}'})
-                WITH rn, u.from AS ufrom, u.type AS utype ORDER BY rn.id, u.from DESC
-                WITH rn,HEAD(COLLECT(utype)) AS lastut
-                WHERE lastut="ADD"
-                MATCH (rn)-[:re]->(c:category)
-                RETURN c
+                MATCH (:category {id: '${parentId}'})-[u:update]->(sc:category),
+                (b:branch {name: '${b.name}'})
+                where ((u.branch = '${b.name}') or (u.branch = 'master' and u.from < b.from and u.to > b.from))
+                WITH b, sc, u AS rels ORDER BY u.from DESC 
+                WITH b, sc,HEAD(COLLECT(rels)) as latestRel
+                where latestRel.to = ${endOfTime} or (latestRel.to > b.from and latestRel.branch = 'master')
+                return sc
             `;
         };
 
@@ -145,17 +146,19 @@ class GraphRepository {
         const categoryId = removeCategoryEvent.categoryId;
 
         const command = `
-        MATCH (c:category {id:"${categoryId}"})<-[u:update {branch: 'master'}]-(n), (branch:branch {name: '${branch}'})
-        optional match (c)<-[bu:update {branch: '${branch}', to: ${endOfTime}}]-(bn)
-        where u.from < branch.from and u.to > branch.from
-        with c,n,bu
-        FOREACH(ignoreMe IN CASE WHEN bu is null THEN [1] ELSE [] END | 
-	        create (c)<-[rel:update {branch: '${branch}', from: ${now()}, to: ${now()}}]-(n)
+        match (c:category {id:"${categoryId}"}),
+(c)<-[u:update {branch: 'master'}]-(mn),
+(branch:branch {name: '${branch}'})
+optional match (c)<-[bu:update {branch: '${branch}'}]-(bn)
+        where (u.from < branch.from and u.to > branch.from) or bu.to = ${endOfTime}
+        with c,bu,mn
+ FOREACH(ignoreMe IN CASE WHEN (bu is not null) THEN [1] ELSE [] END |
+	        set bu.to = ${now()}
 		)
-	  FOREACH(ignoreMe IN CASE WHEN bu is not null THEN [1] ELSE [] END | 
-			 set bu.to = ${now()}
-		)
-        `;
+	  FOREACH(ignoreMe IN CASE WHEN (bu is null) THEN [1] ELSE [] END |
+		        create (c)<-[rel:update {branch: '${branch}', from: ${now()}, to: ${now()}}]-(mn)
+        )
+                `;
 
         return GraphRepository.execCommand('deleteCategory', command);
     }
@@ -206,7 +209,7 @@ class GraphRepository {
         where last_update = 'ADD'
         match p = (:start)-[*]->(rn)-[*]->(:category {id: '${categoryId}'})
         with distinct nodes(p) as nodes
-        unwind filter(n IN nodes WHERE head(labels(n)) = "category") as n
+        unwind filter(n IN nodes WHERE x(labels(n)) = "category") as n
         return n.id`;
 
         return GraphRepository.execCommand("getCategoryTree", command, (result) => {
@@ -233,3 +236,13 @@ class GraphRepository {
 }
 
 module.exports = GraphRepository;  
+
+
+// {_id: "5c6b41fc1ed1f6e7f2bc6991", name: "RemoveCategoryEvent", created_at: 1550533115750, branch: "master", categoryId: "8106"}branch: "master"categoryId: "8106"created_at: 1550533115750name: "RemoveCategoryEvent"_id: "5c6b41fc1ed1f6e7f2bc6991"__proto__: Object
+
+// match p = (s:start)-[u:update* {branch: 'master'}]->(c:category {id: '8106'})
+// with nodes(p) as nodes, relationships(p) as rels
+// unwind filter(u IN rels WHERE u.from <= 1550533115750 and u.to > 1550533115750) as updates
+// return distinct nodes
+
+// delete is not working
