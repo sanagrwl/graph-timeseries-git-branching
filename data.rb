@@ -101,10 +101,13 @@ $top_categories_relations_file = "top-categories-relations.csv"
 $products_file = "products.csv"
 $products_relations_file = "products-relations.csv"
 
-top_categories_count = 30
-sub_categories_per_category = 4
+# top_categories_count = 30
+top_categories_count = 10
+# sub_categories_per_category = 4
+top_categories_count = 3
 category_levels = 5
-products_per_leaf_category = 250
+# products_per_leaf_category = 250
+products_per_leaf_category = 10
 
 total_categories_under_one_root = (0...category_levels).reduce(0) {|r, v| r + sub_categories_per_category ** v} 
 total_categories = top_categories_count * total_categories_under_one_root
@@ -157,13 +160,13 @@ USING PERIODIC COMMIT 1000
 LOAD CSV FROM "file:///#{$categories_relations_file}" AS line
 match (a:category), (b:category)
 where a.id = line[0] and b.id = line[1]
-create (a)-[:update {type: 'ADD', branch: 'master', from: toInt(line[3])}]->(b);
+create (a)-[:update {branch: 'master', from: toInt(line[3]), to: 2148530400000}]->(b);
 
 USING PERIODIC COMMIT 1000
 LOAD CSV FROM "file:///#{$top_categories_relations_file}" AS line
 match (a:start {id: "start"}), (b:category)
 where b.id = line[0]
-create (a)-[:update {type: 'ADD', branch: 'master', from: toInt(line[2])}]->(b);
+create (a)-[:update {branch: 'master', from: toInt(line[2]), to: 2148530400000}]->(b);
 
 USING PERIODIC COMMIT 1000
 LOAD CSV FROM "file:///#{$products_file}" AS line
@@ -173,7 +176,7 @@ USING PERIODIC COMMIT 1000
 LOAD CSV FROM "file:///#{$products_relations_file}" AS line
 match (a:category), (b:product)
 where a.id = line[0] and b.id = line[1]
-create (a)-[:update {type: 'ADD', branch: 'master', from: toInt(line[3])}]->(b);
+create (a)-[:update {type: 'ADD', branch: 'master', from: toInt(line[3]), to: 2148530400000}]->(b);
 
 
 #{bold("Start app:")} (inside ui-server directory)
